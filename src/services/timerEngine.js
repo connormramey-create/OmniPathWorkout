@@ -1,7 +1,3 @@
-let timerInterval = null;
-let timerRemainingSeconds = 0;
-let isTimerPaused = false;
-
 export function playRestTimerFinishSound() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -36,49 +32,4 @@ export function playRestTimerFinishSound() {
   if ("vibrate" in navigator) {
     navigator.vibrate([200, 100, 200, 100, 400]);
   }
-}
-
-export function startRestTimer(seconds, onTick, onFinish) {
-  clearInterval(timerInterval);
-  timerRemainingSeconds = seconds || 60;
-  isTimerPaused = false;
-
-  const tick = () => {
-    if (isTimerPaused) return;
-
-    const mins = Math.floor(timerRemainingSeconds / 60);
-    const secs = timerRemainingSeconds % 60;
-    const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
-    if (onTick) onTick(formatted, timerRemainingSeconds);
-
-    if (timerRemainingSeconds <= 0) {
-      clearInterval(timerInterval);
-      playRestTimerFinishSound();
-      if (onFinish) onFinish();
-      return;
-    }
-    timerRemainingSeconds--;
-  };
-
-  tick();
-  timerInterval = setInterval(tick, 1000);
-}
-
-export function adjustRestTimer(secondsToAdd, onTick) {
-  timerRemainingSeconds = Math.max(0, timerRemainingSeconds + secondsToAdd);
-  const mins = Math.floor(timerRemainingSeconds / 60);
-  const secs = timerRemainingSeconds % 60;
-  const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  if (onTick) onTick(formatted, timerRemainingSeconds);
-}
-
-export function togglePauseRestTimer() {
-  isTimerPaused = !isTimerPaused;
-  return isTimerPaused;
-}
-
-export function stopRestTimer() {
-  clearInterval(timerInterval);
-  timerRemainingSeconds = 0;
 }
