@@ -1,3 +1,14 @@
+// Add at the top of src/App.jsx or assets/js/app.js
+function getSafeLocalStorage(key, fallbackValue) {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : fallbackValue;
+  } catch (error) {
+    console.warn(`Failed to parse localStorage key "${key}". Resetting to default.`, error);
+    localStorage.removeItem(key);
+    return fallbackValue;
+  }
+}
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './config/firebase';
 import exercisesData from './data/exercises.json';
