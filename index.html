@@ -52,30 +52,32 @@
         <!-- Calisthenics Skill Tree View -->
         <div id="calisthenicsSkillTreeContainer" class="hidden"></div>
 
-        <!-- Dynamic Mobility Engine Cards -->
-        <div class="workout-section">
-          <div class="mobility-wrapper">
-            <div class="mobility-card metal-subcard">
-              <div class="mobility-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <h4 style="color: var(--accent-gold); font-size: 0.9rem;">🔥 TARGETED DYNAMIC WARM-UP & PREHAB</h4>
-                <span id="warmupCountBadge" class="tag">0 Drills</span>
-              </div>
-              <div id="dynamicWarmupList" class="mobility-list"></div>
+        <!-- 1. TOP: Dynamic Warm-Up & Prehab -->
+        <div class="workout-section margin-top">
+          <div class="mobility-card metal-subcard">
+            <div class="mobility-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4 style="color: var(--accent-gold); font-size: 0.9rem;">🔥 TARGETED DYNAMIC WARM-UP & PREHAB</h4>
+              <span id="warmupCountBadge" class="tag">0 Drills</span>
             </div>
-
-            <div class="mobility-card metal-subcard margin-top">
-              <div class="mobility-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <h4 style="color: var(--accent-silver); font-size: 0.9rem;">🧘 SPECIFIC COOL-DOWN STRETCHES</h4>
-                <span id="cooldownCountBadge" class="tag">0 Stretches</span>
-              </div>
-              <div id="cooldownStretchList" class="mobility-list"></div>
-            </div>
+            <div id="dynamicWarmupList" class="mobility-list"></div>
           </div>
         </div>
 
-        <div class="workout-section">
+        <!-- 2. MIDDLE: Exercises -->
+        <div class="workout-section margin-top">
           <h4>🏋️ EXERCISES</h4>
           <div id="exercise-list" class="exercise-grid"></div>
+        </div>
+
+        <!-- 3. BOTTOM: Cool-Down Stretches -->
+        <div class="workout-section margin-top">
+          <div class="mobility-card metal-subcard">
+            <div class="mobility-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4 style="color: var(--accent-silver); font-size: 0.9rem;">🧘 SPECIFIC COOL-DOWN STRETCHES</h4>
+              <span id="cooldownCountBadge" class="tag">0 Stretches</span>
+            </div>
+            <div id="cooldownStretchList" class="mobility-list"></div>
+          </div>
         </div>
 
         <button id="start-workout-btn" class="metal-btn action-btn full-width margin-top">🚀 START THIS WORKOUT</button>
@@ -233,8 +235,19 @@
         <h2 id="active-workout-name">SESSION IN PROGRESS</h2>
         <button id="minimize-workout-btn" class="metal-btn small-btn">🗕 MINIMIZE</button>
       </header>
+
+      <!-- Active Workout Top: Dynamic Warm-Up -->
+      <div class="workout-section margin-top">
+        <div class="mobility-card metal-subcard">
+          <div class="mobility-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h4 style="color: var(--accent-gold); font-size: 0.9rem;">🔥 TARGETED DYNAMIC WARM-UP & PREHAB</h4>
+            <span id="activeWarmupCountBadge" class="tag">0 Drills</span>
+          </div>
+          <div id="activeDynamicWarmupList" class="mobility-list"></div>
+        </div>
+      </div>
       
-      <div class="timer-card metal-subcard">
+      <div class="timer-card metal-subcard margin-top">
         <div class="timer-label">REST TIMER</div>
         <div class="timer-display" id="rest-timer-display">00:00</div>
         <div class="timer-controls">
@@ -247,9 +260,20 @@
         </div>
       </div>
 
-      <div id="active-exercise-container" class="active-exercises-list"></div>
+      <div id="active-exercise-container" class="active-exercises-list margin-top"></div>
 
-      <div class="modal-footer">
+      <!-- Active Workout Bottom: Cool-Down Stretches -->
+      <div class="workout-section margin-top">
+        <div class="mobility-card metal-subcard">
+          <div class="mobility-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h4 style="color: var(--accent-silver); font-size: 0.9rem;">🧘 SPECIFIC COOL-DOWN STRETCHES</h4>
+            <span id="activeCooldownCountBadge" class="tag">0 Stretches</span>
+          </div>
+          <div id="activeCooldownStretchList" class="mobility-list"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer margin-top">
         <button id="finish-workout-btn" class="metal-btn primary-btn full-width">✅ COMPLETE WORKOUT</button>
       </div>
     </div>
