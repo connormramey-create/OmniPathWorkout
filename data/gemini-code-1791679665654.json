@@ -1,0 +1,47 @@
+{
+  "none": {
+    "id": "none",
+    "name": "None / Healthy",
+    "contraindications": [],
+    "prehab_drills": []
+  },
+  "shoulder_rotator_cuff": {
+    "id": "shoulder_rotator_cuff",
+    "name": "Shoulder / Rotator Cuff Strain",
+    "contraindications": ["overhead press", "vertical push", "dips", "behind the neck press", "upright row"],
+    "prehab_drills": [
+      { "name": "Band Face Pulls", "duration": "15 reps", "desc": "Squeeze rear delts and externally rotate shoulders at peak contraction.", "isPrehab": true },
+      { "name": "Shoulder Dislocates (Band/PVC)", "duration": "12 reps", "desc": "Keep arms straight and core tight while moving band overhead front-to-back.", "isPrehab": true },
+      { "name": "Y-T-W Band Raises", "duration": "10 reps each", "desc": "Target lower traps and rotator cuff stability through controlled raises.", "isPrehab": true }
+    ]
+  },
+  "lower_back": {
+    "id": "lower_back",
+    "name": "Lower Back Strain / Lumbar Disc",
+    "contraindications": ["barbell deadlift", "good morning", "heavy back squat", "bent over row", "hyperextension"],
+    "prehab_drills": [
+      { "name": "Bird-Dog Holds", "duration": "10 per side", "desc": "Extend opposite arm and leg while maintaining a neutral spine and brace.", "isPrehab": true },
+      { "name": "Cat-Cow Spine Mobilization", "duration": "12 reps", "desc": "Gently articulate thoracic and lumbar spine without forcing range.", "isPrehab": true },
+      { "name": "McGill Curl-Ups", "duration": "8 reps (5s hold)", "desc": "Hands under lower back, lift head/shoulders slightly to activate deep core.", "isPrehab": true }
+    ]
+  },
+  "knee_patellar": {
+    "id": "knee_patellar",
+    "name": "Knee / Patellar Tendonitis",
+    "contraindications": ["barbell squat", "leg extension", "deep walking lunges", "sissy squat", "jump squat"],
+    "prehab_drills": [
+      { "name": "Tibialis Bodyweight Raises", "duration": "20 reps", "desc": "Lean against wall, flex toes up to strengthen tibialis anterior muscle.", "isPrehab": true },
+      { "name": "Spanish Squat Iso-Holds", "duration": "45 sec hold", "desc": "Use band behind knees to sit back into isometric squat; unloads patellar tendon.", "isPrehab": true },
+      { "name": "Terminal Knee Extensions (TKEs)", "duration": "15 per leg", "desc": "Attach band behind knee joint and contract quad into full lockout.", "isPrehab": true }
+    ]
+  },
+  "wrist_forearm": {
+    "id": "wrist_forearm",
+    "name": "Wrist / Forearm Tendonitis",
+    "contraindications": ["straight bar curl", "barbell wrist curl", "heavy flat bench press"],
+    "prehab_drills": [
+      { "name": "Dynamic Wrist Flexor/Extensor Sweeps", "duration": "15 per side", "desc": "Gently flex and extend wrist under light tension to promote blood flow.", "isPrehab": true },
+      { "name": "Quadruped Wrist Rocks", "duration": "12 reps", "desc": "On hands and knees, gently rock bodyweight over hands in multiple angles.", "isPrehab": true }
+    ]
+  }
+}
