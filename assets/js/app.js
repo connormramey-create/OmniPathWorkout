@@ -722,11 +722,14 @@ function generateTargetedMobility(workoutExercises) {
   return { warmups, cooldowns };
 }
 
-function renderTargetedMobilityLists(mobility) {
-  const warmupContainer = document.getElementById('dynamicWarmupList');
-  const cooldownContainer = document.getElementById('cooldownStretchList');
-  if (document.getElementById('warmupCountBadge')) document.getElementById('warmupCountBadge').textContent = `${mobility.warmups.length} Drills`;
-  if (document.getElementById('cooldownCountBadge')) document.getElementById('cooldownCountBadge').textContent = `${mobility.cooldowns.length} Stretches`;
+function renderTargetedMobilityLists(mobility, prefix = '') {
+  const warmupContainer = document.getElementById(prefix ? `${prefix}DynamicWarmupList` : 'dynamicWarmupList');
+  const cooldownContainer = document.getElementById(prefix ? `${prefix}CooldownStretchList` : 'cooldownStretchList');
+  const warmupBadge = document.getElementById(prefix ? `${prefix}WarmupCountBadge` : 'warmupCountBadge');
+  const cooldownBadge = document.getElementById(prefix ? `${prefix}CooldownCountBadge` : 'cooldownCountBadge');
+
+  if (warmupBadge) warmupBadge.textContent = `${mobility.warmups.length} Drills`;
+  if (cooldownBadge) cooldownBadge.textContent = `${mobility.cooldowns.length} Stretches`;
 
   if (warmupContainer) {
     warmupContainer.innerHTML = mobility.warmups.map(w => `
@@ -1369,6 +1372,10 @@ function checkActiveSession() {
 function renderActiveWorkoutModal() {
   if (!activeWorkout) return;
   document.getElementById("active-workout-name").innerText = activeWorkout.title;
+
+  // Render Mobility Lists in Active Workout Modal
+  const mobility = generateTargetedMobility(activeWorkout.exercises || activeWorkout.logs);
+  renderTargetedMobilityLists(mobility, 'active');
 
   const container = document.getElementById("active-exercise-container");
   container.innerHTML = activeWorkout.logs.map((ex, exIdx) => {
