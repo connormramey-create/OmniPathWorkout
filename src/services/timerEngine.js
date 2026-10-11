@@ -65,10 +65,10 @@ export function startRestTimer(seconds, onTick, onFinish) {
 export function togglePauseRestTimer(isCurrentlyPaused, remainingSeconds, onTick, onFinish) {
   if (!isCurrentlyPaused) {
     stopRestTimer();
-    return true; // Returns new paused state (true)
+    return true;
   } else {
     startRestTimer(remainingSeconds, onTick, onFinish);
-    return false; // Returns new paused state (false)
+    return false;
   }
 }
 
