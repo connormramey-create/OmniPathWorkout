@@ -1,3 +1,5 @@
+let activeTimerInterval = null;
+
 export function playRestTimerFinishSound() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -26,10 +28,50 @@ export function playRestTimerFinishSound() {
     osc1.stop(ctx.currentTime + 1.2);
     osc2.stop(ctx.currentTime + 1.2);
   } catch (err) {
-    console.error("Audio error:", err);
+    console.error("Audio playback error:", err);
   }
 
   if ("vibrate" in navigator) {
     navigator.vibrate([200, 100, 200, 100, 400]);
   }
+}
+
+export function stopRestTimer() {
+  if (activeTimerInterval) {
+    clearInterval(activeTimerInterval);
+    activeTimerInterval = null;
+  }
+}
+
+export function startRestTimer(seconds, onTick, onFinish) {
+  stopRestTimer();
+  let remaining = seconds;
+  if (onTick) onTick(remaining);
+
+  activeTimerInterval = setInterval(() => {
+    remaining -= 1;
+    if (onTick) onTick(remaining);
+
+    if (remaining <= 0) {
+      stopRestTimer();
+      playRestTimerFinishSound();
+      if (onFinish) onFinish();
+    }
+  }, 1000);
+
+  return activeTimerInterval;
+}
+
+export function togglePauseRestTimer(isCurrentlyPaused, remainingSeconds, onTick, onFinish) {
+  if (!isCurrentlyPaused) {
+    stopRestTimer();
+    return true; // Returns new paused state (true)
+  } else {
+    startRestTimer(remainingSeconds, onTick, onFinish);
+    return false; // Returns new paused state (false)
+  }
+}
+
+export function adjustRestTimer(currentSeconds, deltaSeconds) {
+  return Math.max(0, currentSeconds + deltaSeconds);
 }
