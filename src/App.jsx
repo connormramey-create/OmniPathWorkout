@@ -11,7 +11,13 @@ import {
   isExerciseContraindicated,
   DEFAULT_MAX_LIFTS 
 } from './services/workoutEngine';
-import { playRestTimerFinishSound } from './services/timerEngine';
+import { 
+  startRestTimer, 
+  togglePauseRestTimer, 
+  adjustRestTimer, 
+  stopRestTimer, 
+  playRestTimerFinishSound 
+} from './services/timerEngine';
 import { exportHistoryToCSV, getPlanStorageKey } from './services/dbService';
 
 export default function App() {
@@ -42,14 +48,8 @@ export default function App() {
 
   // UI Modals & Active State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isCustomExOpen, setIsCustomExOpen] = useState(false);
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [pickerTarget, setPickerTarget] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  
   const [generatedSession, setGeneratedSession] = useState(null);
   const [activeWorkout, setActiveWorkout] = useState(() => JSON.parse(localStorage.getItem('gymbro_active_session') || 'null'));
-  const [activePlan, setActivePlan] = useState(() => JSON.parse(localStorage.getItem(getPlanStorageKey(userSettings.workoutStyle)) || 'null'));
 
   // Timer State
   const [restSeconds, setRestSeconds] = useState(0);
@@ -62,25 +62,6 @@ export default function App() {
   useEffect(() => { localStorage.setItem('gymbro_history', JSON.stringify(workoutHistory)); }, [workoutHistory]);
   useEffect(() => { localStorage.setItem('gymbro_custom_exercises', JSON.stringify(customExercises)); }, [customExercises]);
   useEffect(() => { localStorage.setItem('gymbro_calisthenics_skills', JSON.stringify(calisthenicsSkills)); }, [calisthenicsSkills]);
-
-  // Rest Timer Interval
-  useEffect(() => {
-    let timer = null;
-    if (isTimerActive && !isTimerPaused && restSeconds > 0) {
-      timer = setInterval(() => {
-        setRestSeconds(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            setIsTimerActive(false);
-            playRestTimerFinishSound();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [isTimerActive, isTimerPaused, restSeconds]);
 
   // Auth Listener
   useEffect(() => {
@@ -105,9 +86,44 @@ export default function App() {
   }, []);
 
   const triggerRestTimer = () => {
-    setRestSeconds(parseInt(userSettings.restTime || 60, 10));
+    const initialSeconds = parseInt(userSettings.restTime || 60, 10);
+    setRestSeconds(initialSeconds);
     setIsTimerActive(true);
     setIsTimerPaused(false);
+
+    startRestTimer(
+      initialSeconds,
+      (remaining) => setRestSeconds(remaining),
+      () => setIsTimerActive(false)
+    );
+  };
+
+  const handleAdjustTimer = (secondsToAdd) => {
+    const newTime = adjustRestTimer(restSeconds, secondsToAdd);
+    setRestSeconds(newTime);
+    if (isTimerActive && !isTimerPaused) {
+      startRestTimer(
+        newTime,
+        (remaining) => setRestSeconds(remaining),
+        () => setIsTimerActive(false)
+      );
+    }
+  };
+
+  const handleTogglePauseTimer = () => {
+    const newPauseState = togglePauseRestTimer(
+      isTimerPaused,
+      restSeconds,
+      (remaining) => setRestSeconds(remaining),
+      () => setIsTimerActive(false)
+    );
+    setIsTimerPaused(newPauseState);
+  };
+
+  const handleSkipTimer = () => {
+    stopRestTimer();
+    setIsTimerActive(false);
+    setRestSeconds(0);
   };
 
   const handleGenerateSession = () => {
@@ -198,6 +214,7 @@ export default function App() {
     setWorkoutHistory(prev => [historyEntry, ...prev]);
     setActiveWorkout(null);
     localStorage.removeItem('gymbro_active_session');
+    stopRestTimer();
     setIsTimerActive(false);
     alert(`Workout Logged! Total Volume Lifted: ${totalSessionVolume.toLocaleString()} lbs`);
   };
@@ -217,10 +234,9 @@ export default function App() {
         </button>
       </header>
 
-      {/* Tabs */}
+      {/* Navigation Tabs */}
       <nav className="flex gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 mb-6 text-xs font-bold">
         <button onClick={() => setActiveTab('generator')} className={`flex-1 py-2 rounded ${activeTab === 'generator' ? 'bg-amber-400 text-slate-950' : 'text-slate-400'}`}>GENERATOR</button>
-        <button onClick={() => setActiveTab('plan')} className={`flex-1 py-2 rounded ${activeTab === 'plan' ? 'bg-amber-400 text-slate-950' : 'text-slate-400'}`}>PLAN</button>
         {userSettings.workoutStyle === 'calisthenics' && (
           <button onClick={() => setActiveTab('pathways')} className={`flex-1 py-2 rounded ${activeTab === 'pathways' ? 'bg-amber-400 text-slate-950' : 'text-slate-400'}`}>PATHWAYS</button>
         )}
@@ -241,7 +257,6 @@ export default function App() {
                 <p className="text-xs text-slate-400">{userSettings.duration} Mins | Style: {userSettings.workoutStyle.toUpperCase()} | Scheme: {userSettings.progressionScheme.toUpperCase()}</p>
               </div>
 
-              {/* Exercises */}
               <div className="space-y-2">
                 {generatedSession.exercises.map((ex, idx) => (
                   <div key={idx} className="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center text-xs">
@@ -254,7 +269,6 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Start Workout */}
               <button onClick={() => handleStartSession(generatedSession)} className="w-full py-2.5 bg-emerald-500 text-slate-950 font-bold rounded hover:bg-emerald-400">
                 ▶ START ACTIVE WORKOUT
               </button>
@@ -330,7 +344,6 @@ export default function App() {
                   </div>
                   {historyRec && <p className="text-[10px] text-slate-400">LAST TIME: {historyRec.lastWeight} lbs × {historyRec.lastReps} reps</p>}
 
-                  {/* Sets */}
                   <div className="space-y-1 pt-1">
                     {ex.sets.map((s, sIdx) => (
                       <div key={sIdx} className="flex justify-between items-center bg-slate-950 p-2 rounded border border-slate-800">
@@ -357,7 +370,7 @@ export default function App() {
                             className="w-12 bg-slate-900 border border-slate-700 text-center rounded text-xs p-1" 
                           /> reps
                         </div>
-                        <label className="flex items-center gap-1 text-[10px] font-bold text-slate-300">
+                        <label className="flex items-center gap-1 text-[10px] font-bold text-slate-300 cursor-pointer">
                           <input 
                             type="checkbox" 
                             checked={s.completed} 
@@ -379,9 +392,9 @@ export default function App() {
         <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-amber-400 p-3 flex justify-between items-center max-w-md mx-auto z-50">
           <span className="font-mono font-bold text-lg text-amber-400">{formattedTimer}</span>
           <div className="flex gap-2 text-xs font-bold">
-            <button onClick={() => setRestSeconds(prev => prev + 15)} className="bg-slate-800 px-2 py-1 rounded">+15s</button>
-            <button onClick={() => setIsTimerPaused(!isTimerPaused)} className="bg-slate-800 px-2 py-1 rounded">{isTimerPaused ? 'RESUME' : 'PAUSE'}</button>
-            <button onClick={() => setIsTimerActive(false)} className="bg-rose-900 text-rose-200 px-2 py-1 rounded">SKIP</button>
+            <button onClick={() => handleAdjustTimer(15)} className="bg-slate-800 px-2 py-1 rounded">+15s</button>
+            <button onClick={handleTogglePauseTimer} className="bg-slate-800 px-2 py-1 rounded">{isTimerPaused ? 'RESUME' : 'PAUSE'}</button>
+            <button onClick={handleSkipTimer} className="bg-rose-900 text-rose-200 px-2 py-1 rounded">SKIP</button>
           </div>
         </div>
       )}
@@ -401,7 +414,6 @@ export default function App() {
                 <option value="standard">Standard Lifter</option>
                 <option value="powerlifter">Powerlifter</option>
                 <option value="calisthenics">Calisthenics</option>
-                <option value="program_builder">Program Builder</option>
               </select>
             </div>
 
@@ -426,7 +438,6 @@ export default function App() {
               </select>
             </div>
 
-            {/* 1RM Max Lifts */}
             <div className="border-t border-slate-800 pt-2 space-y-2">
               <label className="block text-amber-400 font-bold">1RM MAX LIFTS (LBS)</label>
               <div className="grid grid-cols-2 gap-2">
