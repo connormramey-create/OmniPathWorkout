@@ -1,0 +1,6 @@
+{
+  "appId": "com.omnipath.workout",
+  "appName": "OmniPath Workout",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
