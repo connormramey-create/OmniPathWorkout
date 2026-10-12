@@ -17,7 +17,7 @@ export function exportHistoryToCSV(workoutHistory = []) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `iron_bro_progress_log_${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.download = `omnipath_progress_log_${new Date().toISOString().slice(0, 10)}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
