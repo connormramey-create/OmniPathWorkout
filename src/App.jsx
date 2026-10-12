@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { auth, db } from "./config/firebase";
+import React, { useState, useEffect } from "react";
+import { auth } from "./config/firebase";
 import {
   startRestTimer,
   adjustRestTimer,
@@ -15,7 +15,7 @@ import {
 import {
   DEFAULT_SETTINGS,
   DEFAULT_EXERCISES,
-  INJURY_DATA,
+  DEFAULT_MAX_LIFTS,
   CALISTHENICS_SKILL_TREES,
   calculateProgressionSetTargets,
   generateWorkoutSession
@@ -33,7 +33,15 @@ function getSafeLocalStorage(key, fallbackValue) {
 }
 
 export default function App() {
-  const [userSettings, setUserSettings] = useState(() => getSafeLocalStorage("gymbro_settings", DEFAULT_SETTINGS));
+  const [userSettings, setUserSettings] = useState(() => {
+    const saved = getSafeLocalStorage("gymbro_settings", DEFAULT_SETTINGS);
+    return {
+      ...DEFAULT_SETTINGS,
+      ...saved,
+      maxLifts: { ...DEFAULT_MAX_LIFTS, ...(saved?.maxLifts || {}) }
+    };
+  });
+
   const [workoutHistory, setWorkoutHistory] = useState(() => getSafeLocalStorage("gymbro_history", []));
   const [exerciseHistory, setExerciseHistory] = useState(() => getSafeLocalStorage("gymbro_exercise_history", {}));
   const [customExercises, setCustomExercises] = useState(() => getSafeLocalStorage("gymbro_custom_exercises", []));
@@ -60,15 +68,13 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState("");
   const [authError, setAuthError] = useState("");
 
+  // Complete Custom Exercise Form State
   const [customExName, setCustomExName] = useState("");
   const [customExTarget, setCustomExTarget] = useState("chest");
   const [customExEquipment, setCustomExEquipment] = useState("barbell");
   const [customExPattern, setCustomExPattern] = useState("horizontal push");
-  const [customExSymmetry, setCustomExSymmetry] = useState("bilateral");
-  const [customExDifficulty, setCustomExDifficulty] = useState("beginner");
 
   const [generatedSession, setGeneratedSession] = useState(null);
-
   const [timerRemaining, setTimerRemaining] = useState(0);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
   const [showTimerBar, setShowTimerBar] = useState(false);
@@ -86,7 +92,13 @@ export default function App() {
         setCurrentUser(user);
         setShowAuthModal(false);
         syncUserDataFromCloud(user.uid, (data) => {
-          if (data.settings) setUserSettings(data.settings);
+          if (data.settings) {
+            setUserSettings((prev) => ({
+              ...DEFAULT_SETTINGS,
+              ...data.settings,
+              maxLifts: { ...DEFAULT_MAX_LIFTS, ...(data.settings.maxLifts || {}) }
+            }));
+          }
           if (data.history) setWorkoutHistory(data.history);
           if (data.exercise_history) setExerciseHistory(data.exercise_history);
           if (data.custom_exercises) setCustomExercises(data.custom_exercises);
@@ -109,9 +121,7 @@ export default function App() {
     );
   };
 
-  const handleAdjustTimer = (delta) => {
-    adjustRestTimer(delta, (rem) => setTimerRemaining(rem));
-  };
+  const handleAdjustTimer = (delta) => adjustRestTimer(delta, (rem) => setTimerRemaining(rem));
 
   const handleTogglePauseTimer = () => {
     const paused = togglePauseRestTimer();
@@ -129,17 +139,13 @@ export default function App() {
     if (!auth) return setAuthError("Firebase Auth not initialized.");
 
     if (isSignUpMode) {
-      auth.createUserWithEmailAndPassword(authEmail, authPassword)
-        .catch((err) => setAuthError(err.message));
+      auth.createUserWithEmailAndPassword(authEmail, authPassword).catch((err) => setAuthError(err.message));
     } else {
-      auth.signInWithEmailAndPassword(authEmail, authPassword)
-        .catch((err) => setAuthError(err.message));
+      auth.signInWithEmailAndPassword(authEmail, authPassword).catch((err) => setAuthError(err.message));
     }
   };
 
-  const handleSignOut = () => {
-    if (auth) auth.signOut();
-  };
+  const handleSignOut = () => { if (auth) auth.signOut(); };
 
   const handleGenerate = (splitOverride = null) => {
     const session = generateWorkoutSession(userSettings, customExercises, splitOverride);
@@ -263,9 +269,7 @@ export default function App() {
       name: customExName.trim(),
       target: customExTarget,
       equipment: customExEquipment,
-      movement_pattern: customExPattern,
-      symmetry: customExSymmetry,
-      difficulty: customExDifficulty
+      movement_pattern: customExPattern
     };
 
     const updated = [...customExercises, newEx];
@@ -353,7 +357,7 @@ export default function App() {
         <div>
           <h1 className="text-2xl font-black tracking-wider text-amber-400">OmniPathWorkout</h1>
           <div className="text-xs tracking-widest text-slate-400 font-semibold uppercase">
-            {userSettings.profile.replace("_", " ")} WORKOUT STYLE
+            {(userSettings.profile || "standard").replace("_", " ")} WORKOUT STYLE
           </div>
         </div>
         <div className="flex gap-2 items-center">
@@ -395,7 +399,7 @@ export default function App() {
             <div className="bg-slate-900 p-4 rounded-lg border border-slate-800 flex justify-between items-center flex-wrap gap-4">
               <div>
                 <h3 className="font-bold text-slate-200">Session Routine Generator</h3>
-                <p className="text-xs text-slate-400">Duration: {userSettings.duration}m | Injury Filter: {userSettings.selectedInjury.toUpperCase()}</p>
+                <p className="text-xs text-slate-400">Duration: {userSettings.duration}m | Injury Filter: {(userSettings.selectedInjury || "none").toUpperCase()}</p>
               </div>
               <button onClick={() => handleGenerate()} className="bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs px-4 py-2 rounded">
                 GENERATE NOW
@@ -519,7 +523,7 @@ export default function App() {
         {activeTab === "pathways" && userSettings.profile === "calisthenics" && (
           <div className="space-y-4 bg-slate-900 p-5 rounded-lg border border-purple-500/30">
             <h3 className="font-bold text-purple-400 text-lg">Calisthenics Skill Progression Pathways</h3>
-            {Object.entries(CALISTRENICS_SKILL_TREES || CALISTHENICS_SKILL_TREES).map(([treeKey, steps]) => (
+            {Object.entries(CALISTHENICS_SKILL_TREES).map(([treeKey, steps]) => (
               <div key={treeKey} className="bg-slate-950 p-4 rounded border border-slate-800 space-y-2">
                 <h4 className="text-xs font-bold uppercase text-purple-300">{treeKey} Pathway</h4>
                 <div className="space-y-1">
@@ -558,8 +562,9 @@ export default function App() {
         )}
       </main>
 
+      {/* Floating Timer Bar - z-[60] so it sits above active workout modal */}
       {showTimerBar && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900 text-slate-100 border border-amber-400/40 rounded-full px-6 py-3 shadow-2xl flex items-center gap-4 z-40">
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900 text-slate-100 border border-amber-400/40 rounded-full px-6 py-3 shadow-2xl flex items-center gap-4 z-[60]">
           <div className="text-xs font-bold text-amber-400">REST TIMER</div>
           <div className="text-lg font-black tracking-widest text-slate-100">{formattedTime(timerRemaining)}</div>
           <button onClick={() => handleAdjustTimer(-15)} className="text-xs font-bold bg-slate-800 px-2 py-1 rounded text-slate-300">-15s</button>
@@ -571,11 +576,17 @@ export default function App() {
         </div>
       )}
 
+      {/* Active Workout Modal */}
       {showActiveModal && activeWorkout && (
         <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex justify-center p-4 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-800 max-w-2xl w-full rounded-lg p-6 space-y-6 my-auto">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h2 className="text-xl font-bold text-amber-400">{activeWorkout.title}</h2>
+              <div>
+                <h2 className="text-xl font-bold text-amber-400">{activeWorkout.title}</h2>
+                {showTimerBar && (
+                  <div className="text-xs text-amber-300 font-mono mt-1">Rest Timer Active: {formattedTime(timerRemaining)}</div>
+                )}
+              </div>
               <button onClick={() => setShowActiveModal(false)} className="text-xs text-slate-400">MINIMIZE</button>
             </div>
 
@@ -616,6 +627,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Settings Modal */}
       {showSettingsModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex justify-center items-center p-4">
           <div className="bg-slate-900 border border-slate-800 max-w-md w-full rounded-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -633,8 +645,8 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold font-semibold">Injury Contraindication Filter</label>
-                <select value={userSettings.selectedInjury} onChange={(e) => setUserSettings({ ...userSettings, selectedInjury: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-200">
+                <label className="block text-slate-400 mb-1 font-semibold">Injury Contraindication Filter</label>
+                <select value={userSettings.selectedInjury || "none"} onChange={(e) => setUserSettings({ ...userSettings, selectedInjury: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-200">
                   <option value="none">None / Healthy</option>
                   <option value="shoulder_rotator_cuff">Shoulder / Rotator Cuff Strain</option>
                   <option value="lower_back">Lower Back Strain / Lumbar Disc</option>
@@ -655,17 +667,65 @@ export default function App() {
                 </select>
               </div>
 
+              {/* All 4 Max Lifts Baseline Inputs */}
               <div className="border-t border-slate-800 pt-2 space-y-2">
                 <label className="block text-amber-400 font-bold">1RM Max Lifts Baseline (lbs)</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="number" value={userSettings.maxLifts.benchPress} onChange={(e) => setUserSettings({ ...userSettings, maxLifts: { ...userSettings.maxLifts, benchPress: e.target.value } })} className="bg-slate-950 border border-slate-700 p-1.5 rounded text-center" placeholder="Bench" />
-                  <input type="number" value={userSettings.maxLifts.squat} onChange={(e) => setUserSettings({ ...userSettings, maxLifts: { ...userSettings.maxLifts, squat: e.target.value } })} className="bg-slate-950 border border-slate-700 p-1.5 rounded text-center" placeholder="Squat" />
+                  <div>
+                    <label className="block text-slate-500 text-[10px] mb-1">Bench Press</label>
+                    <input type="number" value={userSettings.maxLifts?.benchPress || 185} onChange={(e) => setUserSettings({ ...userSettings, maxLifts: { ...userSettings.maxLifts, benchPress: e.target.value } })} className="w-full bg-slate-950 border border-slate-700 p-1.5 rounded text-center text-slate-100" placeholder="Bench" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-500 text-[10px] mb-1">Back Squat</label>
+                    <input type="number" value={userSettings.maxLifts?.squat || 225} onChange={(e) => setUserSettings({ ...userSettings, maxLifts: { ...userSettings.maxLifts, squat: e.target.value } })} className="w-full bg-slate-950 border border-slate-700 p-1.5 rounded text-center text-slate-100" placeholder="Squat" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-500 text-[10px] mb-1">Deadlift</label>
+                    <input type="number" value={userSettings.maxLifts?.deadlift || 275} onChange={(e) => setUserSettings({ ...userSettings, maxLifts: { ...userSettings.maxLifts, deadlift: e.target.value } })} className="w-full bg-slate-950 border border-slate-700 p-1.5 rounded text-center text-slate-100" placeholder="Deadlift" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-500 text-[10px] mb-1">Overhead Press</label>
+                    <input type="number" value={userSettings.maxLifts?.overheadPress || 115} onChange={(e) => setUserSettings({ ...userSettings, maxLifts: { ...userSettings.maxLifts, overheadPress: e.target.value } })} className="w-full bg-slate-950 border border-slate-700 p-1.5 rounded text-center text-slate-100" placeholder="OHP" />
+                  </div>
                 </div>
               </div>
 
+              {/* Complete Custom Exercise Creator Form */}
               <form onSubmit={handleSaveCustomExercise} className="border-t border-slate-800 pt-2 space-y-2">
                 <label className="block text-amber-400 font-bold">➕ Create Custom Exercise</label>
-                <input type="text" placeholder="Exercise Name" value={customExName} onChange={(e) => setCustomExName(e.target.value)} className="w-full bg-slate-950 border border-slate-700 p-1.5 rounded text-slate-100" />
+                <input type="text" placeholder="Exercise Name" value={customExName} onChange={(e) => setCustomExName(e.target.value)} className="w-full bg-slate-950 border border-slate-700 p-1.5 rounded text-slate-100" required />
+                <div className="grid grid-cols-3 gap-1">
+                  <select value={customExTarget} onChange={(e) => setCustomExTarget(e.target.value)} className="bg-slate-950 border border-slate-700 p-1 rounded text-slate-200 text-[10px]">
+                    <option value="chest">Chest</option>
+                    <option value="lats">Lats</option>
+                    <option value="upper back">Upper Back</option>
+                    <option value="shoulders">Shoulders</option>
+                    <option value="biceps">Biceps</option>
+                    <option value="triceps">Triceps</option>
+                    <option value="quads">Quads</option>
+                    <option value="hamstrings">Hamstrings</option>
+                    <option value="glutes">Glutes</option>
+                    <option value="calves">Calves</option>
+                    <option value="abs">Abs</option>
+                  </select>
+                  <select value={customExEquipment} onChange={(e) => setCustomExEquipment(e.target.value)} className="bg-slate-950 border border-slate-700 p-1 rounded text-slate-200 text-[10px]">
+                    <option value="barbell">Barbell</option>
+                    <option value="dumbbell">Dumbbell</option>
+                    <option value="cable">Cable</option>
+                    <option value="body weight">Body Weight</option>
+                    <option value="smith machine">Smith Machine</option>
+                    <option value="kettlebell">Kettlebell</option>
+                    <option value="band">Band</option>
+                  </select>
+                  <select value={customExPattern} onChange={(e) => setCustomExPattern(e.target.value)} className="bg-slate-950 border border-slate-700 p-1 rounded text-slate-200 text-[10px]">
+                    <option value="horizontal push">Horiz Push</option>
+                    <option value="horizontal pull">Horiz Pull</option>
+                    <option value="vertical push">Vert Push</option>
+                    <option value="vertical pull">Vert Pull</option>
+                    <option value="squat">Squat</option>
+                    <option value="hinge">Hinge</option>
+                  </select>
+                </div>
                 <button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs py-1.5 rounded border border-slate-700">
                   SAVE EXERCISE
                 </button>
