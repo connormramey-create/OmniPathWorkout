@@ -19,7 +19,7 @@ export const INJURY_DATA = {
   shoulder_rotator_cuff: {
     id: "shoulder_rotator_cuff",
     name: "Shoulder / Rotator Cuff Strain",
-    contraindications: ["overhead press", "vertical push", "dips", "upright row"],
+    contraindications: ["overhead", "vertical push", "dip", "upright row", "behind the neck"],
     prehab_drills: [
       { name: "Band Face Pulls", duration: "15 reps", desc: "Squeeze rear delts and externally rotate shoulders.", isPrehab: true },
       { name: "Shoulder Dislocates (Band/PVC)", duration: "12 reps", desc: "Keep arms straight while moving band overhead front-to-back.", isPrehab: true }
@@ -28,7 +28,7 @@ export const INJURY_DATA = {
   lower_back: {
     id: "lower_back",
     name: "Lower Back Strain / Lumbar Disc",
-    contraindications: ["barbell deadlift", "good morning", "heavy back squat", "hyperextension"],
+    contraindications: ["deadlift", "good morning", "squat", "hyperextension", "hinge", "row"],
     prehab_drills: [
       { name: "Bird-Dog Holds", duration: "10 per side", desc: "Extend opposite arm/leg with neutral spine.", isPrehab: true },
       { name: "McGill Curl-Ups", duration: "8 reps (5s hold)", desc: "Hands under lower back, brace core.", isPrehab: true }
@@ -37,7 +37,7 @@ export const INJURY_DATA = {
   knee_patellar: {
     id: "knee_patellar",
     name: "Knee / Patellar Tendonitis",
-    contraindications: ["barbell squat", "leg extension", "sissy squat", "jump squat"],
+    contraindications: ["squat", "leg extension", "sissy squat", "jump squat", "lunge", "step-up"],
     prehab_drills: [
       { name: "Tibialis Bodyweight Raises", duration: "20 reps", desc: "Strengthen tibialis anterior to absorb impact.", isPrehab: true },
       { name: "Spanish Squat Iso-Holds", duration: "45 sec hold", desc: "Band behind knees to unweight patellar tendon.", isPrehab: true }
@@ -46,7 +46,7 @@ export const INJURY_DATA = {
   wrist_forearm: {
     id: "wrist_forearm",
     name: "Wrist / Forearm Tendonitis",
-    contraindications: ["straight bar curl", "barbell wrist curl"],
+    contraindications: ["barbell curl", "wrist curl", "straight bar"],
     prehab_drills: [
       { name: "Dynamic Wrist Sweeps", duration: "15 per side", desc: "Promote blood flow through wrist extensors.", isPrehab: true }
     ]
@@ -127,6 +127,20 @@ export function roundTo5(val) {
   return Math.max(10, Math.round(val / 5) * 5);
 }
 
+export function isExerciseContraindicated(ex, injuryKey) {
+  const injuryInfo = INJURY_DATA[injuryKey || "none"];
+  if (!injuryInfo || !injuryInfo.contraindications || injuryInfo.contraindications.length === 0) {
+    return false;
+  }
+  const name = (ex.name || "").toLowerCase();
+  const pattern = (ex.movement_pattern || "").toLowerCase();
+  const target = (ex.target || "").toLowerCase();
+
+  return injuryInfo.contraindications.some((c) => 
+    name.includes(c) || pattern.includes(c) || target.includes(c)
+  );
+}
+
 export function getExerciseMaxLift(ex, userSettings) {
   const maxes = userSettings?.maxLifts || DEFAULT_MAX_LIFTS;
   const name = (ex.name || "").toLowerCase();
@@ -194,13 +208,8 @@ export function generateWorkoutSession(userSettings, customExercises = [], split
   let dataset = [...DEFAULT_EXERCISES, ...customExercises];
 
   // Apply Injury Contraindications Filter
-  const injuryInfo = INJURY_DATA[userSettings.selectedInjury || "none"];
-  if (injuryInfo && injuryInfo.contraindications.length > 0) {
-    dataset = dataset.filter((ex) => {
-      const name = (ex.name || "").toLowerCase();
-      const pattern = (ex.movement_pattern || "").toLowerCase();
-      return !injuryInfo.contraindications.some((c) => name.includes(c) || pattern.includes(c));
-    });
+  if (userSettings.selectedInjury && userSettings.selectedInjury !== "none") {
+    dataset = dataset.filter((ex) => !isExerciseContraindicated(ex, userSettings.selectedInjury));
   }
 
   let available = [];
@@ -236,6 +245,7 @@ export function generateWorkoutSession(userSettings, customExercises = [], split
     selected.push(poolCopy.splice(Math.floor(Math.random() * poolCopy.length), 1)[0]);
   }
 
+  const injuryInfo = INJURY_DATA[userSettings.selectedInjury || "none"];
   const warmups = injuryInfo?.prehab_drills ? [...injuryInfo.prehab_drills] : [];
   selected.forEach((ex) => {
     const t = (ex.target || "").toLowerCase();
