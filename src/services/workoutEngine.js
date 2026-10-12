@@ -1,3 +1,6 @@
+import EXERCISES_JSON from '../data/exercises.json';
+import INJURIES_JSON from '../data/injuries.json';
+
 export const UPPER_BODY_TARGETS = [
   "chest", "upper chest", "lower chest", "pectorals", "lats", "upper back", 
   "shoulders", "front delts", "side delts", "rear delts", "traps", "biceps", 
@@ -13,45 +16,6 @@ export const POWERLIFTER_COMPOUNDS = [
   "squat", "bench press", "deadlift", "overhead press", "barbell shoulder press", 
   "sumo deadlift", "front squat", "incline bench press"
 ];
-
-export const INJURY_DATA = {
-  none: { id: "none", name: "None / Healthy", contraindications: [], prehab_drills: [] },
-  shoulder_rotator_cuff: {
-    id: "shoulder_rotator_cuff",
-    name: "Shoulder / Rotator Cuff Strain",
-    contraindications: ["overhead", "vertical push", "dip", "upright row", "behind the neck"],
-    prehab_drills: [
-      { name: "Band Face Pulls", duration: "15 reps", desc: "Squeeze rear delts and externally rotate shoulders.", isPrehab: true },
-      { name: "Shoulder Dislocates (Band/PVC)", duration: "12 reps", desc: "Keep arms straight while moving band overhead front-to-back.", isPrehab: true }
-    ]
-  },
-  lower_back: {
-    id: "lower_back",
-    name: "Lower Back Strain / Lumbar Disc",
-    contraindications: ["deadlift", "good morning", "squat", "hyperextension", "hinge", "row"],
-    prehab_drills: [
-      { name: "Bird-Dog Holds", duration: "10 per side", desc: "Extend opposite arm/leg with neutral spine.", isPrehab: true },
-      { name: "McGill Curl-Ups", duration: "8 reps (5s hold)", desc: "Hands under lower back, brace core.", isPrehab: true }
-    ]
-  },
-  knee_patellar: {
-    id: "knee_patellar",
-    name: "Knee / Patellar Tendonitis",
-    contraindications: ["squat", "leg extension", "sissy squat", "jump squat", "lunge", "step-up"],
-    prehab_drills: [
-      { name: "Tibialis Bodyweight Raises", duration: "20 reps", desc: "Strengthen tibialis anterior to absorb impact.", isPrehab: true },
-      { name: "Spanish Squat Iso-Holds", duration: "45 sec hold", desc: "Band behind knees to unweight patellar tendon.", isPrehab: true }
-    ]
-  },
-  wrist_forearm: {
-    id: "wrist_forearm",
-    name: "Wrist / Forearm Tendonitis",
-    contraindications: ["barbell curl", "wrist curl", "straight bar"],
-    prehab_drills: [
-      { name: "Dynamic Wrist Sweeps", duration: "15 per side", desc: "Promote blood flow through wrist extensors.", isPrehab: true }
-    ]
-  }
-};
 
 export const DYNAMIC_WARMUP_LIBRARY = {
   chest: [{ name: "Arm Swings & Chest Openers", duration: "45 sec", desc: "Cross arms across chest, pull back dynamically." }],
@@ -107,28 +71,15 @@ export const DEFAULT_SETTINGS = {
   maxLifts: DEFAULT_MAX_LIFTS,
   selectedInjury: "none",
   autoStartTimer: true,
-  calisthenicsUnlocked: { push: [1], pull: [1], legs: [1] }
+  calisthenicsUnlocked: [] 
 };
-
-export const DEFAULT_EXERCISES = [
-  { id: "bench_press", name: "Barbell Bench Press", target: "chest", equipment: "barbell", movement_pattern: "horizontal push" },
-  { id: "barbell_row", name: "Barbell Bent-Over Row", target: "upper back", equipment: "barbell", movement_pattern: "horizontal pull" },
-  { id: "overhead_press", name: "Overhead Barbell Press", target: "shoulders", equipment: "barbell", movement_pattern: "vertical push" },
-  { id: "lat_pulldown", name: "Cable Lat Pulldown", target: "lats", equipment: "cable", movement_pattern: "vertical pull" },
-  { id: "barbell_squat", name: "Barbell Back Squat", target: "quads", equipment: "barbell", movement_pattern: "squat" },
-  { id: "romanian_deadlift", name: "Romanian Deadlift", target: "hamstrings", equipment: "barbell", movement_pattern: "hinge" },
-  { id: "db_bicep_curl", name: "Dumbbell Bicep Curl", target: "biceps", equipment: "dumbbell", movement_pattern: "pull" },
-  { id: "tricep_rope_pushdown", name: "Cable Tricep Pushdown", target: "triceps", equipment: "cable", movement_pattern: "push" },
-  { id: "push_up", name: "Push-Up", target: "chest", equipment: "body weight", movement_pattern: "horizontal push" },
-  { id: "pull_up", name: "Pull-Up", target: "lats", equipment: "body weight", movement_pattern: "vertical pull" }
-];
 
 export function roundTo5(val) {
   return Math.max(10, Math.round(val / 5) * 5);
 }
 
 export function isExerciseContraindicated(ex, injuryKey) {
-  const injuryInfo = INJURY_DATA[injuryKey || "none"];
+  const injuryInfo = INJURIES_JSON[injuryKey || "none"];
   if (!injuryInfo || !injuryInfo.contraindications || injuryInfo.contraindications.length === 0) {
     return false;
   }
@@ -205,7 +156,8 @@ export function generateWorkoutSession(userSettings, customExercises = [], split
   const duration = parseInt(userSettings.duration, 10);
   const count = Math.max(3, Math.floor(duration / 7.5));
 
-  let dataset = [...DEFAULT_EXERCISES, ...customExercises];
+  // Merge the imported active dataset with user custom ones
+  let dataset = [...EXERCISES_JSON, ...customExercises];
 
   // Apply Injury Contraindications Filter
   if (userSettings.selectedInjury && userSettings.selectedInjury !== "none") {
@@ -214,7 +166,32 @@ export function generateWorkoutSession(userSettings, customExercises = [], split
 
   let available = [];
   if (profile === "calisthenics") {
-    available = dataset.filter((ex) => (ex.equipment || "").toLowerCase() === "body weight");
+    let allowedCalisthenicsNames = new Set();
+    const checkedSkills = userSettings.calisthenicsUnlocked || [];
+    
+    // Evaluate Skill Trees to unlock current skills + immediate next progression step
+    Object.values(CALISTHENICS_SKILL_TREES).forEach(tree => {
+      let hasCheckedInTree = false;
+      tree.forEach((step, idx) => {
+        if (checkedSkills.includes(step.name)) {
+          hasCheckedInTree = true;
+          allowedCalisthenicsNames.add(step.name);
+          if (idx + 1 < tree.length) {
+            allowedCalisthenicsNames.add(tree[idx + 1].name); // Unlock +1 step
+          }
+        }
+      });
+      // If none checked in this pathway, unlock level 1 by default
+      if (!hasCheckedInTree && tree.length > 0) {
+        allowedCalisthenicsNames.add(tree[0].name); 
+      }
+    });
+
+    available = dataset.filter((ex) => 
+      allowedCalisthenicsNames.has(ex.name) || 
+      (ex.equipment || "").toLowerCase() === "body weight" || 
+      (ex.equipment || "").toLowerCase() === "bodyweight"
+    );
   } else {
     const activeEquip = (userSettings.equipment || []).map((e) => e.toLowerCase().trim());
     available = dataset.filter((ex) => activeEquip.includes((ex.equipment || "").toLowerCase().trim()));
@@ -232,6 +209,7 @@ export function generateWorkoutSession(userSettings, customExercises = [], split
   else if (split === "ppl_pull") { targetMuscles = ["lats", "upper back", "biceps"]; title = "PULL ONLY SESSION"; }
   else if (split === "ppl_legs") { targetMuscles = ["quads", "hamstrings", "glutes", "calves"]; title = "LEGS ONLY SESSION"; }
   else if (split === "ppl") { title = "PPL COMBINED SESSION"; }
+  // "upper_lower" behaves as full body or alternating depending on the scheduler, handled natively by generic filters below if not specified here.
 
   let pool = available;
   if (targetMuscles.length > 0) {
@@ -245,7 +223,7 @@ export function generateWorkoutSession(userSettings, customExercises = [], split
     selected.push(poolCopy.splice(Math.floor(Math.random() * poolCopy.length), 1)[0]);
   }
 
-  const injuryInfo = INJURY_DATA[userSettings.selectedInjury || "none"];
+  const injuryInfo = INJURIES_JSON[userSettings.selectedInjury || "none"];
   const warmups = injuryInfo?.prehab_drills ? [...injuryInfo.prehab_drills] : [];
   selected.forEach((ex) => {
     const t = (ex.target || "").toLowerCase();
@@ -259,5 +237,9 @@ export function generateWorkoutSession(userSettings, customExercises = [], split
     if (t.includes("chest") && COOL_DOWN_STRETCH_LIBRARY.chest) cooldowns.push(...COOL_DOWN_STRETCH_LIBRARY.chest);
   });
 
-  return { title, exercises: selected, warmups, cooldowns };
+  // Deduplicate array maps for clean lists
+  const uniqueWarmups = Array.from(new Set(warmups.map(a => a.name))).map(name => warmups.find(a => a.name === name));
+  const uniqueCooldowns = Array.from(new Set(cooldowns.map(a => a.name))).map(name => cooldowns.find(a => a.name === name));
+
+  return { title, exercises: selected, warmups: uniqueWarmups, cooldowns: uniqueCooldowns };
 }
