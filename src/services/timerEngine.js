@@ -1,4 +1,6 @@
-let activeTimerInterval = null;
+let timerInterval = null;
+let timerRemainingSeconds = 0;
+let isTimerPaused = false;
 
 export function playRestTimerFinishSound() {
   try {
@@ -28,7 +30,7 @@ export function playRestTimerFinishSound() {
     osc1.stop(ctx.currentTime + 1.2);
     osc2.stop(ctx.currentTime + 1.2);
   } catch (err) {
-    console.error("Audio playback error:", err);
+    console.error("Audio error:", err);
   }
 
   if ("vibrate" in navigator) {
@@ -36,42 +38,40 @@ export function playRestTimerFinishSound() {
   }
 }
 
-export function stopRestTimer() {
-  if (activeTimerInterval) {
-    clearInterval(activeTimerInterval);
-    activeTimerInterval = null;
-  }
-}
-
 export function startRestTimer(seconds, onTick, onFinish) {
-  stopRestTimer();
-  let remaining = seconds;
-  if (onTick) onTick(remaining);
+  clearInterval(timerInterval);
+  timerRemainingSeconds = seconds || 60;
+  isTimerPaused = false;
 
-  activeTimerInterval = setInterval(() => {
-    remaining -= 1;
-    if (onTick) onTick(remaining);
+  const tick = () => {
+    if (isTimerPaused) return;
 
-    if (remaining <= 0) {
-      stopRestTimer();
+    if (onTick) onTick(timerRemainingSeconds);
+
+    if (timerRemainingSeconds <= 0) {
+      clearInterval(timerInterval);
       playRestTimerFinishSound();
       if (onFinish) onFinish();
+      return;
     }
-  }, 1000);
+    timerRemainingSeconds--;
+  };
 
-  return activeTimerInterval;
+  tick();
+  timerInterval = setInterval(tick, 1000);
 }
 
-export function togglePauseRestTimer(isCurrentlyPaused, remainingSeconds, onTick, onFinish) {
-  if (!isCurrentlyPaused) {
-    stopRestTimer();
-    return true;
-  } else {
-    startRestTimer(remainingSeconds, onTick, onFinish);
-    return false;
-  }
+export function adjustRestTimer(secondsToAdd, onTick) {
+  timerRemainingSeconds = Math.max(0, timerRemainingSeconds + secondsToAdd);
+  if (onTick) onTick(timerRemainingSeconds);
 }
 
-export function adjustRestTimer(currentSeconds, deltaSeconds) {
-  return Math.max(0, currentSeconds + deltaSeconds);
+export function togglePauseRestTimer() {
+  isTimerPaused = !isTimerPaused;
+  return isTimerPaused;
+}
+
+export function stopRestTimer() {
+  clearInterval(timerInterval);
+  timerRemainingSeconds = 0;
 }
