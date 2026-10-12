@@ -14,7 +14,6 @@ import {
 } from "./services/dbService";
 import {
   DEFAULT_SETTINGS,
-  DEFAULT_EXERCISES,
   DEFAULT_MAX_LIFTS,
   CALISTHENICS_SKILL_TREES,
   calculateProgressionSetTargets,
@@ -55,6 +54,7 @@ export default function App() {
   const [showSearchPickerModal, setShowSearchPickerModal] = useState(false);
   const [pickerTargetSlot, setPickerTargetSlot] = useState(null);
   const [pickerSearchQuery, setPickerSearchQuery] = useState("");
+  const [expandedLogId, setExpandedLogId] = useState(null);
 
   // Program Builder & Standard Plan State
   const [standardPlanMonths, setStandardPlanMonths] = useState(1);
@@ -148,6 +148,14 @@ export default function App() {
 
   const handleSignOut = () => { if (auth) auth.signOut(); };
 
+  const handleToggleCalisthenicsSkill = (skillName) => {
+    const current = userSettings.calisthenicsUnlocked || [];
+    const updated = current.includes(skillName)
+      ? current.filter(n => n !== skillName)
+      : [...current, skillName];
+    setUserSettings({ ...userSettings, calisthenicsUnlocked: updated });
+  };
+
   const handleGenerate = (splitOverride = null) => {
     const session = generateWorkoutSession(userSettings, customExercises, splitOverride);
     setGeneratedSession(session);
@@ -234,7 +242,8 @@ export default function App() {
         date: new Date().toLocaleDateString(),
         exerciseCount: activeWorkout.logs.length,
         totalCompletedSets: totalSets,
-        totalVolume: totalVol
+        totalVolume: totalVol,
+        logs: activeWorkout.logs // Store detailed nested sets for expansion maps and CSV
       },
       ...workoutHistory
     ];
@@ -244,7 +253,6 @@ export default function App() {
     localStorage.setItem("gymbro_history", JSON.stringify(newHistory));
     localStorage.setItem("gymbro_exercise_history", JSON.stringify(newExHistory));
     
-    // Mark plan day complete if applicable
     if (activeWorkout.planDayRef && activePlan) {
       const updatedPlan = { ...activePlan };
       updatedPlan.weeks.forEach((w) => {
@@ -608,16 +616,30 @@ export default function App() {
         {activeTab === "pathways" && userSettings.profile === "calisthenics" && (
           <div className="space-y-4 bg-slate-900 p-5 rounded-lg border border-purple-500/30">
             <h3 className="font-bold text-purple-400 text-lg">Calisthenics Skill Progression Pathways</h3>
+            <p className="text-xs text-slate-400">Check the skills you have mastered. The workout generator will only include your mastered skills plus the immediate next progression level.</p>
             {Object.entries(CALISTHENICS_SKILL_TREES).map(([treeKey, steps]) => (
               <div key={treeKey} className="bg-slate-950 p-4 rounded border border-slate-800 space-y-2">
                 <h4 className="text-xs font-bold uppercase text-purple-300">{treeKey} Pathway</h4>
                 <div className="space-y-1">
-                  {steps.map((s) => (
-                    <div key={s.level} className="flex justify-between items-center text-xs p-2 bg-slate-900 rounded border border-slate-800/60">
-                      <span>Lvl {s.level}: <strong>{s.name}</strong> ({s.target})</span>
-                      <span className="text-slate-400 text-[10px]">{s.reps}</span>
-                    </div>
-                  ))}
+                  {steps.map((s) => {
+                    const isChecked = (userSettings.calisthenicsUnlocked || []).includes(s.name);
+                    return (
+                      <label key={s.level} className={`flex items-center gap-3 text-xs p-2 rounded border cursor-pointer transition-colors ${isChecked ? 'bg-purple-900/30 border-purple-500/50' : 'bg-slate-900 border-slate-800/60'}`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleCalisthenicsSkill(s.name)}
+                          className="accent-purple-500 w-4 h-4"
+                        />
+                        <div className="flex-1 flex justify-between items-center">
+                          <span className={isChecked ? 'text-purple-300 font-bold' : 'text-slate-300'}>
+                            Lvl {s.level}: {s.name}
+                          </span>
+                          <span className="text-slate-500 text-[10px]">{s.reps}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -633,21 +655,42 @@ export default function App() {
               </button>
             </div>
             {workoutHistory.map((item) => (
-              <div key={item.id} className="bg-slate-900 p-4 rounded-lg border border-slate-800 flex justify-between items-center">
-                <div>
-                  <div className="font-bold text-sm text-slate-200">{item.title}</div>
-                  <div className="text-xs text-slate-500">{item.date} • {item.exerciseCount} Exercises • {item.totalCompletedSets} Sets</div>
+              <div key={item.id} className="bg-slate-900 p-4 rounded-lg border border-slate-800">
+                <div className="flex justify-between items-center cursor-pointer" onClick={() => setExpandedLogId(expandedLogId === item.id ? null : item.id)}>
+                  <div>
+                    <div className="font-bold text-sm text-slate-200">{item.title}</div>
+                    <div className="text-xs text-slate-500">{item.date} • {item.exerciseCount} Exercises • {item.totalCompletedSets} Sets</div>
+                  </div>
+                  <div className="flex gap-4 items-center">
+                    <div className="text-amber-400 font-bold text-sm bg-amber-400/10 px-3 py-1 rounded border border-amber-400/20">
+                      {item.totalVolume.toLocaleString()} lbs
+                    </div>
+                    <div className="text-slate-400 text-xs">{expandedLogId === item.id ? '▲' : '▼'}</div>
+                  </div>
                 </div>
-                <div className="text-amber-400 font-bold text-sm bg-amber-400/10 px-3 py-1 rounded border border-amber-400/20">
-                  {item.totalVolume.toLocaleString()} lbs
-                </div>
+                {/* Expanded Details Map */}
+                {expandedLogId === item.id && item.logs && (
+                  <div className="mt-4 border-t border-slate-800 pt-4 space-y-3">
+                    {item.logs.map((log, lIdx) => (
+                      <div key={lIdx} className="text-xs text-slate-300">
+                        <div className="font-bold text-amber-400 mb-1">{log.name}</div>
+                        {log.sets.filter(s => s.completed).map((set, sIdx) => (
+                          <div key={sIdx} className="ml-4 flex gap-4 text-slate-400 border-l border-slate-800 pl-2 mb-1">
+                            <span>Set {sIdx + 1}:</span>
+                            <span className="text-slate-200">{set.weight} lbs × {set.reps} reps</span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </main>
 
-      {/* Floating Timer Bar - z-[60] so it sits above active workout modal */}
+      {/* Floating Timer Bar */}
       {showTimerBar && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900 text-slate-100 border border-amber-400/40 rounded-full px-6 py-3 shadow-2xl flex items-center gap-4 z-[60]">
           <div className="text-xs font-bold text-amber-400">REST TIMER</div>
@@ -675,7 +718,7 @@ export default function App() {
               <button onClick={() => setShowActiveModal(false)} className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">MINIMIZE</button>
             </div>
 
-            {/* Render Dynamic Warm-ups directly in the active session */}
+            {/* Dynamic Warm-ups directly in the active session */}
             {activeWorkout.warmups && activeWorkout.warmups.length > 0 && (
               <div className="bg-slate-950 p-4 rounded border border-amber-500/20">
                 <h4 className="text-xs font-bold text-amber-400 mb-2">🔥 DYNAMIC WARM-UP & PREHAB</h4>
@@ -720,7 +763,7 @@ export default function App() {
               ))}
             </div>
 
-            {/* Render Static Cooldowns directly in the active session */}
+            {/* Static Cooldowns directly in the active session */}
             {activeWorkout.cooldowns && activeWorkout.cooldowns.length > 0 && (
               <div className="bg-slate-950 p-4 rounded border border-slate-700/30">
                 <h4 className="text-xs font-bold text-slate-400 mb-2">🧘 COOL-DOWN STRETCHES</h4>
@@ -759,7 +802,6 @@ export default function App() {
                 </select>
               </div>
 
-              {/* Restored Duration Parameter */}
               <div>
                 <label className="block text-slate-400 mb-1 font-semibold">Session Duration Target</label>
                 <select value={userSettings.duration} onChange={(e) => setUserSettings({ ...userSettings, duration: parseInt(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-200">
@@ -770,7 +812,6 @@ export default function App() {
                 </select>
               </div>
 
-              {/* Restored Progression Scheme (Hidden on Calisthenics) */}
               {userSettings.profile !== "calisthenics" && (
               <div>
                 <label className="block text-slate-400 mb-1 font-semibold">Progression Scheme</label>
@@ -783,7 +824,6 @@ export default function App() {
               </div>
               )}
 
-              {/* Restored Rest Timer Setting */}
               <div>
                 <label className="block text-slate-400 mb-1 font-semibold">Rest Timer (Seconds)</label>
                 <input type="number" value={userSettings.restTime || 60} onChange={(e) => setUserSettings({ ...userSettings, restTime: parseInt(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200" />
@@ -804,6 +844,8 @@ export default function App() {
                 <label className="block text-slate-400 mb-1 font-semibold">Workout Split Focus</label>
                 <select value={userSettings.split} onChange={(e) => setUserSettings({ ...userSettings, split: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-200">
                   <option value="upper_lower">Upper / Lower Body Split</option>
+                  <option value="upper">Upper Body Only</option>
+                  <option value="lower">Lower Body Only</option>
                   <option value="ppl">Push / Pull / Legs (PPL Combined)</option>
                   <option value="ppl_push">Push Only (PPL)</option>
                   <option value="ppl_pull">Pull Only (PPL)</option>
@@ -907,7 +949,7 @@ export default function App() {
             <h3 className="text-sm font-bold text-cyan-400">Select Exercise for Slot</h3>
             <input type="text" placeholder="Search exercises..." value={pickerSearchQuery} onChange={(e) => setPickerSearchQuery(e.target.value)} className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-xs text-slate-100" />
             <div className="max-h-60 overflow-y-auto space-y-1">
-              {[...DEFAULT_EXERCISES, ...customExercises]
+              {[...EXERCISES_JSON, ...customExercises]
                 .filter((ex) => ex.name.toLowerCase().includes(pickerSearchQuery.toLowerCase()))
                 .map((ex) => (
                   <button key={ex.id} onClick={() => assignExerciseToSlot(ex)} className="w-full text-left p-2 bg-slate-950 hover:bg-slate-800 rounded border border-slate-800 text-xs text-slate-200 flex justify-between">
