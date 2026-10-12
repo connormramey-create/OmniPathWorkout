@@ -2,18 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-dark: #0b0f17;
-  --panel-bg: #151d2a;
-  --accent-gold: #ffd700;
-  --accent-gold-dark: #d4af37;
-  --border-metal: #334155;
-  --text-primary: #f8fafc;
-  --text-muted: #94a3b8;
+/* Theme Color Variables */
+.theme-standard {
+  --accent-color: #fbbf24;
+  --accent-hover: #f59e0b;
+  --accent-border: rgba(251, 191, 36, 0.3);
 }
 
-body {
-  background-color: var(--bg-dark);
-  color: var(--text-primary);
-  font-family: system-ui, -apple-system, sans-serif;
+.theme-powerlifter {
+  --accent-color: #ef4444;
+  --accent-hover: #dc2626;
+  --accent-border: rgba(239, 68, 68, 0.3);
 }
+
+.theme-calisthenics {
+  --accent-color: #a855f7;
+  --accent-hover: #9333ea;
+  --accent-border: rgba(168, 85, 247, 0.3);
+}
+
+.theme-program-builder {
+  --accent-color: #06b6d4;
+  --accent-hover: #0891b2;
+  --accent-border: rgba(6, 182, 212, 0.3);
+}
+
+/* Dynamic Accent Applied Styles */
+.theme-powerlifter .text-amber-400 { color: #f87171 !important; }
+.theme-powerlifter .bg-amber-400 { background-color: #ef4444 !important; }
+.theme-powerlifter .border-amber-400 { border-color: #ef4444 !important; }
+
+.theme-calisthenics .text-amber-400 { color: #c084fc !important; }
+.theme-calisthenics .bg-amber-400 { background-color: #a855f7 !important; }
+.theme-calisthenics .border-amber-400 { border-color: #a855f7 !important; }
+
+.theme-program-builder .text-amber-400 { color: #22d3ee !important; }
+.theme-program-builder .bg-amber-400 { background-color: #06b6d4 !important; }
+.theme-program-builder .border-amber-400 { border-color: #06b6d4 !important; }
