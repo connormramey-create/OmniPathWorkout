@@ -56,6 +56,8 @@ export default function App() {
   const [pickerTargetSlot, setPickerTargetSlot] = useState(null);
   const [pickerSearchQuery, setPickerSearchQuery] = useState("");
 
+  // Program Builder & Standard Plan State
+  const [standardPlanMonths, setStandardPlanMonths] = useState(1);
   const [pbDurationWeeks, setPbDurationWeeks] = useState(4);
   const [pbProgressionRate, setPbProgressionRate] = useState(2.5);
   const [pbExercisesPerSession, setPbExercisesPerSession] = useState(5);
@@ -68,7 +70,6 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState("");
   const [authError, setAuthError] = useState("");
 
-  // Complete Custom Exercise Form State
   const [customExName, setCustomExName] = useState("");
   const [customExTarget, setCustomExTarget] = useState("chest");
   const [customExEquipment, setCustomExEquipment] = useState("barbell");
@@ -242,6 +243,19 @@ export default function App() {
     setExerciseHistory(newExHistory);
     localStorage.setItem("gymbro_history", JSON.stringify(newHistory));
     localStorage.setItem("gymbro_exercise_history", JSON.stringify(newExHistory));
+    
+    // Mark plan day complete if applicable
+    if (activeWorkout.planDayRef && activePlan) {
+      const updatedPlan = { ...activePlan };
+      updatedPlan.weeks.forEach((w) => {
+        w.days.forEach((d) => {
+          if (d.id === activeWorkout.planDayRef) d.completed = true;
+        });
+      });
+      setActivePlan(updatedPlan);
+      localStorage.setItem(getPlanStorageKey(userSettings.profile), JSON.stringify(updatedPlan));
+    }
+
     localStorage.removeItem("gymbro_active_session");
 
     if (currentUser) {
@@ -251,7 +265,7 @@ export default function App() {
         exerciseHistory: newExHistory,
         customExercises,
         calisthenicsSkills: userSettings.calisthenicsUnlocked
-      });
+      }, userSettings.profile || "standard", activePlan);
     }
 
     setActiveWorkout(null);
@@ -288,6 +302,33 @@ export default function App() {
 
     setCustomExName("");
     alert("Custom exercise added successfully!");
+  };
+
+  const buildStandardProgramCycle = () => {
+    const totalWeeks = standardPlanMonths * 4;
+    const schedule = [];
+    const splits = userSettings.split.includes("ppl") 
+      ? ["ppl_push", "ppl_pull", "ppl_legs", "rest", "ppl_push", "ppl_pull", "rest"]
+      : ["upper", "lower", "rest", "upper", "lower", "rest", "rest"];
+
+    for (let w = 1; w <= totalWeeks; w++) {
+      const days = [];
+      for (let d = 1; d <= 7; d++) {
+        const splitType = splits[d - 1];
+        days.push({
+          id: `w${w}_d${d}`,
+          dayNum: d,
+          title: splitType === "rest" ? "Rest Day" : `Workout: ${splitType.toUpperCase()}`,
+          type: splitType,
+          completed: false
+        });
+      }
+      schedule.push({ weekNum: w, days });
+    }
+
+    const plan = { type: "standard_plan", weeks: schedule };
+    setActivePlan(plan);
+    localStorage.setItem(getPlanStorageKey(userSettings.profile || "standard"), JSON.stringify(plan));
   };
 
   const buildProgramBuilderCycle = () => {
@@ -341,6 +382,15 @@ export default function App() {
     setActivePlan(updatedPlan);
     localStorage.setItem(getPlanStorageKey("program_builder"), JSON.stringify(updatedPlan));
     setShowSearchPickerModal(false);
+  };
+
+  const startPlanDay = (day, weekNum) => {
+    if (day.type === "rest") return;
+    const session = generateWorkoutSession(userSettings, customExercises, day.type);
+    session.title = `Week ${weekNum} - ${day.title}`;
+    session.planDayRef = day.id;
+    session.weekNum = weekNum;
+    startActiveWorkout(session);
   };
 
   const formattedTime = (secs) => {
@@ -472,12 +522,19 @@ export default function App() {
                       <option value={8}>8 Weeks (2 Months)</option>
                       <option value={12}>12 Weeks (3 Months)</option>
                       <option value={16}>16 Weeks (4 Months)</option>
-                      <option value={24}>24 Weeks (6 Months)</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-slate-400 mb-1">Weekly Progression (%)</label>
                     <input type="number" step="0.5" value={pbProgressionRate} onChange={(e) => setPbProgressionRate(parseFloat(e.target.value))} className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-100" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-1">Exercises per Session</label>
+                    <input type="number" value={pbExercisesPerSession} onChange={(e) => setPbExercisesPerSession(parseInt(e.target.value))} className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-100" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-1">Workouts per Week</label>
+                    <input type="number" value={pbWorkoutsPerWeek} onChange={(e) => setPbWorkoutsPerWeek(parseInt(e.target.value))} className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-100" />
                   </div>
                 </div>
                 <button onClick={buildProgramBuilderCycle} className="w-full bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold text-xs py-2 rounded">
@@ -495,14 +552,7 @@ export default function App() {
                             <div key={d.dayNum} className="bg-slate-900 p-2 rounded border border-slate-800 text-xs space-y-1">
                               <div className="font-bold text-slate-300">{d.title}</div>
                               {d.exercises.map((slot, sIdx) => (
-                                <button
-                                  key={sIdx}
-                                  onClick={() => {
-                                    setPickerTargetSlot({ weekNum: w.weekNum, dayNum: d.dayNum, slotIdx: sIdx });
-                                    setShowSearchPickerModal(true);
-                                  }}
-                                  className={`w-full text-left p-1.5 rounded text-[10px] font-semibold border ${slot ? "bg-slate-950 border-cyan-400/40 text-cyan-300" : "bg-slate-800/40 border-dashed border-slate-700 text-slate-500"}`}
-                                >
+                                <button key={sIdx} onClick={() => { setPickerTargetSlot({ weekNum: w.weekNum, dayNum: d.dayNum, slotIdx: sIdx }); setShowSearchPickerModal(true); }} className={`w-full text-left p-1.5 rounded text-[10px] font-semibold border ${slot ? "bg-slate-950 border-cyan-400/40 text-cyan-300" : "bg-slate-800/40 border-dashed border-slate-700 text-slate-500"}`}>
                                   {slot ? slot.name : `+ Slot ${sIdx + 1}`}
                                 </button>
                               ))}
@@ -515,7 +565,42 @@ export default function App() {
                 )}
               </div>
             ) : (
-              <p className="text-xs text-slate-400">Select "Program Builder" under Settings Workout Style to access full custom wizard.</p>
+              <div className="bg-slate-900 p-6 rounded-lg border border-slate-800 space-y-4">
+                <h3 className="font-bold text-amber-400 text-lg">Standard Program Generator</h3>
+                <p className="text-xs text-slate-400">Generate a structured multi-week plan based on your current Workout Style, Split, and Progression Scheme.</p>
+                <div>
+                  <label className="block text-slate-400 mb-1 text-xs">Plan Duration</label>
+                  <select value={standardPlanMonths} onChange={(e) => setStandardPlanMonths(parseInt(e.target.value))} className="w-full bg-slate-950 border border-slate-700 p-2 text-xs rounded text-slate-200">
+                    <option value={1}>1 Month (4 Weeks)</option>
+                    <option value={2}>2 Months (8 Weeks)</option>
+                    <option value={3}>3 Months (12 Weeks)</option>
+                  </select>
+                </div>
+                <button onClick={buildStandardProgramCycle} className="w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs py-2 rounded">
+                  GENERATE PLAN
+                </button>
+
+                {activePlan && activePlan.type === "standard_plan" && (
+                  <div className="space-y-4 mt-6 border-t border-slate-800 pt-4">
+                    {activePlan.weeks.map((w) => (
+                      <div key={w.weekNum} className="bg-slate-950 p-3 rounded border border-slate-800 space-y-2">
+                        <div className="text-xs font-bold text-amber-400">WEEK {w.weekNum}</div>
+                        <div className="grid grid-cols-1 gap-2">
+                          {w.days.map((d) => (
+                            <div key={d.id} className="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-800 text-xs">
+                              <span className={d.completed ? "text-slate-500 line-through" : "text-slate-200"}>Day {d.dayNum}: {d.title}</span>
+                              {d.type !== "rest" && !d.completed && (
+                                <button onClick={() => startPlanDay(d, w.weekNum)} className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-2 py-1 rounded font-bold">START</button>
+                              )}
+                              {d.completed && <span className="text-emerald-500 font-bold">DONE</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -584,11 +669,26 @@ export default function App() {
               <div>
                 <h2 className="text-xl font-bold text-amber-400">{activeWorkout.title}</h2>
                 {showTimerBar && (
-                  <div className="text-xs text-amber-300 font-mono mt-1">Rest Timer Active: {formattedTime(timerRemaining)}</div>
+                  <div className="text-xs text-amber-300 font-mono mt-1 font-bold">⏱️ Rest Timer Active: {formattedTime(timerRemaining)}</div>
                 )}
               </div>
-              <button onClick={() => setShowActiveModal(false)} className="text-xs text-slate-400">MINIMIZE</button>
+              <button onClick={() => setShowActiveModal(false)} className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">MINIMIZE</button>
             </div>
+
+            {/* Render Dynamic Warm-ups directly in the active session */}
+            {activeWorkout.warmups && activeWorkout.warmups.length > 0 && (
+              <div className="bg-slate-950 p-4 rounded border border-amber-500/20">
+                <h4 className="text-xs font-bold text-amber-400 mb-2">🔥 DYNAMIC WARM-UP & PREHAB</h4>
+                <div className="space-y-2">
+                  {activeWorkout.warmups.map((w, idx) => (
+                    <div key={idx} className="flex justify-between text-xs border-b border-slate-800/50 pb-1">
+                      <span className="font-semibold text-slate-300">{w.name}</span>
+                      <span className="text-amber-300">{w.duration}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4">
               {activeWorkout.logs.map((ex, exIdx) => (
@@ -620,6 +720,21 @@ export default function App() {
               ))}
             </div>
 
+            {/* Render Static Cooldowns directly in the active session */}
+            {activeWorkout.cooldowns && activeWorkout.cooldowns.length > 0 && (
+              <div className="bg-slate-950 p-4 rounded border border-slate-700/30">
+                <h4 className="text-xs font-bold text-slate-400 mb-2">🧘 COOL-DOWN STRETCHES</h4>
+                <div className="space-y-2">
+                  {activeWorkout.cooldowns.map((c, idx) => (
+                    <div key={idx} className="flex justify-between text-xs border-b border-slate-800/50 pb-1">
+                      <span className="font-semibold text-slate-300">{c.name}</span>
+                      <span className="text-slate-400">{c.duration}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <button onClick={finishWorkout} className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-sm py-3 rounded">
               FINISH & LOG WORKOUT
             </button>
@@ -642,6 +757,36 @@ export default function App() {
                   <option value="calisthenics">Calisthenics Bodyweight Flow</option>
                   <option value="program_builder">Program Builder Custom Wizard</option>
                 </select>
+              </div>
+
+              {/* Restored Duration Parameter */}
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Session Duration Target</label>
+                <select value={userSettings.duration} onChange={(e) => setUserSettings({ ...userSettings, duration: parseInt(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-200">
+                  <option value={30}>30 Minutes</option>
+                  <option value={45}>45 Minutes</option>
+                  <option value={60}>60 Minutes</option>
+                  <option value={90}>90+ Minutes</option>
+                </select>
+              </div>
+
+              {/* Restored Progression Scheme (Hidden on Calisthenics) */}
+              {userSettings.profile !== "calisthenics" && (
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Progression Scheme</label>
+                <select value={userSettings.progressionScheme || "linear"} onChange={(e) => setUserSettings({ ...userSettings, progressionScheme: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-200">
+                  <option value="linear">Linear Progression (Beginner)</option>
+                  <option value="five_three_one">5/3/1 Wave (Intermediate)</option>
+                  <option value="juggernaut">Juggernaut 4-Week Wave (Intermediate)</option>
+                  <option value="conjugate">Conjugate Max Effort (Advanced)</option>
+                </select>
+              </div>
+              )}
+
+              {/* Restored Rest Timer Setting */}
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Rest Timer (Seconds)</label>
+                <input type="number" value={userSettings.restTime || 60} onChange={(e) => setUserSettings({ ...userSettings, restTime: parseInt(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 p-2 rounded text-slate-200" />
               </div>
 
               <div>
@@ -667,7 +812,6 @@ export default function App() {
                 </select>
               </div>
 
-              {/* All 4 Max Lifts Baseline Inputs */}
               <div className="border-t border-slate-800 pt-2 space-y-2">
                 <label className="block text-amber-400 font-bold">1RM Max Lifts Baseline (lbs)</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -690,7 +834,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Complete Custom Exercise Creator Form */}
               <form onSubmit={handleSaveCustomExercise} className="border-t border-slate-800 pt-2 space-y-2">
                 <label className="block text-amber-400 font-bold">➕ Create Custom Exercise</label>
                 <input type="text" placeholder="Exercise Name" value={customExName} onChange={(e) => setCustomExName(e.target.value)} className="w-full bg-slate-950 border border-slate-700 p-1.5 rounded text-slate-100" required />
