@@ -1,7 +1,34 @@
-import { db } from '../config/firebase';
+import { db } from "../config/firebase";
 
-export function getPlanStorageKey(workoutStyle = "standard") {
-  return `gymbro_active_plan_${workoutStyle}`;
+export function getPlanStorageKey(style = "standard") {
+  return `gymbro_active_plan_${style}`;
+}
+
+export function syncUserDataFromCloud(uid, onDataSync) {
+  if (!db || !uid) return;
+  const userRef = db.ref(`users/${uid}`);
+  userRef.on("value", (snapshot) => {
+    const data = snapshot.val();
+    if (data && onDataSync) {
+      onDataSync(data);
+    }
+  });
+}
+
+export function saveUserDataToCloud(uid, payload, style = "standard", activePlan = null) {
+  if (!db || !uid) return;
+
+  db.ref(`users/${uid}`).update({
+    settings: payload.settings,
+    history: payload.history,
+    exercise_history: payload.exerciseHistory,
+    custom_exercises: payload.customExercises,
+    calisthenics_skills: payload.calisthenicsSkills
+  });
+
+  if (activePlan) {
+    db.ref(`users/${uid}/plans/${style}`).set(activePlan);
+  }
 }
 
 export function exportHistoryToCSV(workoutHistory = []) {
@@ -20,20 +47,4 @@ export function exportHistoryToCSV(workoutHistory = []) {
   anchor.download = `omnipath_progress_log_${new Date().toISOString().slice(0, 10)}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
-}
-
-export function syncUserDataFromCloud(uid, callbacks = {}) {
-  if (!uid || !db) return;
-  const userRef = db.ref(`users/${uid}`);
-  userRef.on("value", (snapshot) => {
-    const data = snapshot.val();
-    if (data && callbacks.onDataLoaded) {
-      callbacks.onDataLoaded(data);
-    }
-  });
-}
-
-export function saveUserDataToCloud(uid, data) {
-  if (!uid || !db) return;
-  db.ref(`users/${uid}`).update(data);
 }
