@@ -36,10 +36,39 @@ export function exportHistoryToCSV(workoutHistory = []) {
     alert("No logged workout history available to export.");
     return;
   }
-  let csvContent = "Date,Workout Title,Exercises Completed,Total Volume (lbs)\n";
+  
+  // Create deeper structural headers for expansion
+  let csvContent = "Date,Workout Title,Exercise Name,Set Number,Weight (lbs),Reps Completed\n";
+  
   workoutHistory.forEach(row => {
-    csvContent += `"${row.date || ''}","${(row.title || '').replace(/"/g, '""')}",${row.exerciseCount || 0},${row.totalVolume || 0}\n`;
+    const date = row.date || '';
+    const title = (row.title || '').replace(/"/g, '""');
+
+    if (row.logs && row.logs.length > 0) {
+      row.logs.forEach(log => {
+        const exName = (log.name || '').replace(/"/g, '""');
+        let hasCompletedSet = false;
+
+        if (log.sets) {
+          log.sets.forEach((set, idx) => {
+            if (set.completed) {
+              hasCompletedSet = true;
+              csvContent += `"${date}","${title}","${exName}",${idx + 1},${set.weight || 0},${set.reps || 0}\n`;
+            }
+          });
+        }
+
+        // Output safety log row if an exercise was technically loaded but uncompleted
+        if (!hasCompletedSet) {
+           csvContent += `"${date}","${title}","${exName} (No Sets Logged)",-,-,-\n`;
+        }
+      });
+    } else {
+      // Graceful fallback for history logs saved before the expandable detail tracking upgrade
+      csvContent += `"${date}","${title}","Summary Only",-,${row.totalVolume || 0},0\n`;
+    }
   });
+
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
