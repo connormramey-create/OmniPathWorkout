@@ -1,341 +1,253 @@
-import exercisesData from '../data/exercises.json';
-import injuryDataset from '../data/injuries.json';
+export const UPPER_BODY_TARGETS = [
+  "chest", "upper chest", "lower chest", "pectorals", "lats", "upper back", 
+  "shoulders", "front delts", "side delts", "rear delts", "traps", "biceps", 
+  "brachialis", "triceps", "forearms"
+];
 
-export const DEFAULT_MAX_LIFTS = {
-  benchPress: 185,
-  squat: 225,
-  deadlift: 275,
-  overheadPress: 115
+export const LOWER_BODY_TARGETS = [
+  "quads", "hamstrings", "glutes", "glute medius", "calves", "soleus", 
+  "gastrocnemius", "adductors", "shin", "tibialis anterior", "abs", "obliques", "core", "lower back"
+];
+
+export const POWERLIFTER_COMPOUNDS = [
+  "squat", "bench press", "deadlift", "overhead press", "barbell shoulder press", 
+  "sumo deadlift", "front squat", "incline bench press"
+];
+
+export const INJURY_DATA = {
+  none: { id: "none", name: "None / Healthy", contraindications: [], prehab_drills: [] },
+  shoulder_rotator_cuff: {
+    id: "shoulder_rotator_cuff",
+    name: "Shoulder / Rotator Cuff Strain",
+    contraindications: ["overhead press", "vertical push", "dips", "upright row"],
+    prehab_drills: [
+      { name: "Band Face Pulls", duration: "15 reps", desc: "Squeeze rear delts and externally rotate shoulders.", isPrehab: true },
+      { name: "Shoulder Dislocates (Band/PVC)", duration: "12 reps", desc: "Keep arms straight while moving band overhead front-to-back.", isPrehab: true }
+    ]
+  },
+  lower_back: {
+    id: "lower_back",
+    name: "Lower Back Strain / Lumbar Disc",
+    contraindications: ["barbell deadlift", "good morning", "heavy back squat", "hyperextension"],
+    prehab_drills: [
+      { name: "Bird-Dog Holds", duration: "10 per side", desc: "Extend opposite arm/leg with neutral spine.", isPrehab: true },
+      { name: "McGill Curl-Ups", duration: "8 reps (5s hold)", desc: "Hands under lower back, brace core.", isPrehab: true }
+    ]
+  },
+  knee_patellar: {
+    id: "knee_patellar",
+    name: "Knee / Patellar Tendonitis",
+    contraindications: ["barbell squat", "leg extension", "sissy squat", "jump squat"],
+    prehab_drills: [
+      { name: "Tibialis Bodyweight Raises", duration: "20 reps", desc: "Strengthen tibialis anterior to absorb impact.", isPrehab: true },
+      { name: "Spanish Squat Iso-Holds", duration: "45 sec hold", desc: "Band behind knees to unweight patellar tendon.", isPrehab: true }
+    ]
+  },
+  wrist_forearm: {
+    id: "wrist_forearm",
+    name: "Wrist / Forearm Tendonitis",
+    contraindications: ["straight bar curl", "barbell wrist curl"],
+    prehab_drills: [
+      { name: "Dynamic Wrist Sweeps", duration: "15 per side", desc: "Promote blood flow through wrist extensors.", isPrehab: true }
+    ]
+  }
 };
 
-export const POWERLIFTER_COMPOUNDS = ["squat", "bench press", "deadlift", "overhead press", "barbell shoulder press", "sumo deadlift", "front squat", "incline bench press"];
-
-export const ANTAGONIST_MAP = {
-  "chest": ["lats", "upper back", "rhomboids"],
-  "upper chest": ["lats", "upper back"],
-  "lower chest": ["lats", "upper back"],
-  "pectorals": ["lats", "upper back"],
-  "lats": ["chest", "pectorals", "shoulders"],
-  "upper back": ["chest", "pectorals"],
-  "biceps": ["triceps"],
-  "brachialis": ["triceps"],
-  "triceps": ["biceps", "brachialis"],
-  "quads": ["hamstrings", "glutes"],
-  "hamstrings": ["quads"],
-  "shoulders": ["lats", "rear delts"],
-  "front delts": ["rear delts", "lats"],
-  "side delts": ["traps", "lats"],
-  "abs": ["lower back"],
-  "obliques": ["lower back"],
-  "lower back": ["abs", "obliques"]
+export const DYNAMIC_WARMUP_LIBRARY = {
+  chest: [{ name: "Arm Swings & Chest Openers", duration: "45 sec", desc: "Cross arms across chest, pull back dynamically." }],
+  shoulders: [{ name: "Arm Circles (Forward & Reverse)", duration: "30 sec each", desc: "Rotational shoulder warmup." }],
+  lats: [{ name: "Lat Overhead Side Reaches", duration: "10 per side", desc: "Side bend with overhead reach." }],
+  quads: [{ name: "Goblet Squat Hold w/ Pry", duration: "45 sec", desc: "Sink deep into squat, gently pry knees out." }],
+  hamstrings: [{ name: "Frankenstein Dynamic Sweeps", duration: "10 per leg", desc: "Hinge forward and sweep toes." }],
+  glutes: [{ name: "Glute Bridges", duration: "15 reps", desc: "Squeeze glutes at top pause." }]
 };
 
-export const MOVEMENT_PATTERNS = {
-  HORIZONTAL_PUSH: ['horizontal push'],
-  HORIZONTAL_PULL: ['horizontal pull'],
-  VERTICAL_PUSH: ['vertical push'],
-  VERTICAL_PULL: ['vertical pull'],
-  KNEE_DOMINANT: ['squat', 'knee extension'],
-  HIP_DOMINANT: ['hinge', 'hip extension', 'knee flexion']
+export const COOL_DOWN_STRETCH_LIBRARY = {
+  chest: [{ name: "Doorway Pectoral Stretch", duration: "45 sec hold", desc: "Lean forward in doorway to stretch chest." }],
+  shoulders: [{ name: "Cross-Body Shoulder Stretch", duration: "45 sec per side", desc: "Pull arm across chest." }],
+  lats: [{ name: "Child's Pose w/ Lateral Reach", duration: "60 sec hold", desc: "Walk hands diagonally to stretch lats." }],
+  quads: [{ name: "Standing Quad Stretch", duration: "45 sec per side", desc: "Hold foot to glute." }],
+  hamstrings: [{ name: "Seated Hamstring Stretch", duration: "45 sec per side", desc: "Fold forward from hips." }],
+  glutes: [{ name: "Pigeon Stretch", duration: "45 sec per side", desc: "Cross ankle over knee, lean forward." }]
 };
 
 export const CALISTHENICS_SKILL_TREES = {
   push: [
-    { level: 1, name: "Push-Up", reps: "8-12 reps" },
-    { level: 2, name: "Diamond Push-Up", reps: "8-12 reps" },
-    { level: 3, name: "Pike Push-Up", reps: "6-10 reps" },
-    { level: 4, name: "Elevated Pike Push-Up", reps: "5-8 reps" },
-    { level: 5, name: "Handstand Push-Up (Wall Supported)", reps: "3-5 reps" }
+    { level: 1, name: "Push-Up", target: "chest", reps: "8-12 reps" },
+    { level: 2, name: "Diamond Push-Up", target: "triceps", reps: "8-12 reps" },
+    { level: 3, name: "Pike Push-Up", target: "shoulders", reps: "6-10 reps" },
+    { level: 4, name: "Elevated Pike Push-Up", target: "shoulders", reps: "5-8 reps" },
+    { level: 5, name: "Handstand Push-Up (Wall)", target: "shoulders", reps: "3-5 reps" }
   ],
   pull: [
-    { level: 1, name: "Australian Inverted Row", reps: "8-12 reps" },
-    { level: 2, name: "Chin-Up", reps: "6-10 reps" },
-    { level: 3, name: "Pull-Up", reps: "5-8 reps" },
-    { level: 4, name: "Archer Pull-Up", reps: "4-6 reps" },
-    { level: 5, name: "Muscle-Up", reps: "2-4 reps" }
+    { level: 1, name: "Australian Inverted Row", target: "upper back", reps: "8-12 reps" },
+    { level: 2, name: "Chin-Up", target: "biceps", reps: "6-10 reps" },
+    { level: 3, name: "Pull-Up", target: "lats", reps: "5-8 reps" },
+    { level: 4, name: "Archer Pull-Up", target: "lats", reps: "4-6 reps" },
+    { level: 5, name: "Muscle-Up", target: "lats", reps: "2-4 reps" }
   ],
   legs: [
-    { level: 1, name: "Air Squat", reps: "15-20 reps" },
-    { level: 2, name: "Bulgarian Split Squat", reps: "8-12 reps" },
-    { level: 3, name: "Shrimp Squat", reps: "5-8 reps" },
-    { level: 4, name: "Pistol Squat", reps: "3-6 reps" }
+    { level: 1, name: "Air Squat", target: "quads", reps: "15-20 reps" },
+    { level: 2, name: "Bulgarian Split Squat", target: "quads", reps: "8-12 reps" },
+    { level: 3, name: "Shrimp Squat", target: "quads", reps: "5-8 reps" },
+    { level: 4, name: "Pistol Squat", target: "quads", reps: "3-6 reps" }
   ]
 };
 
-export const DYNAMIC_WARMUP_LIBRARY = {
-  chest: [
-    { name: "Arm Swings & Chest Openers", duration: "45 sec", desc: "Cross arms across chest, then pull back dynamically to open pectorals." },
-    { name: "Band Pull-Aparts", duration: "15 reps", desc: "Hold light band at chest height, pull outward focusing on upper back activation." }
-  ],
-  shoulders: [
-    { name: "Shoulder Dislocates (PVC/Band)", duration: "12 reps", desc: "Pass band overhead from front to back with straight arms." },
-    { name: "Arm Circles (Forward & Reverse)", duration: "30 sec each", desc: "Small to large arm rotations to warm rotator cuff muscles." }
-  ],
-  lats: [
-    { name: "Lat Overhead Side Reaches", duration: "10 per side", desc: "Side bend with overhead reach to dynamically stretch lats." },
-    { name: "Cat-Cow Stretch", duration: "10 reps", desc: "Flex and extend spine to articulate thoracic spine and lats." }
-  ],
-  quads: [
-    { name: "Bodyweight Goblet Squat Hold w/ Pry", duration: "45 sec", desc: "Sink into deep squat, gently prying knees out with elbows." },
-    { name: "Dynamic Walking Quad Stretch", duration: "10 per leg", desc: "Pull foot to glute while reaching opposite hand overhead." }
-  ],
-  hamstrings: [
-    { name: "Frankenstein Dynamic Sweeps", duration: "10 per leg", desc: "Hinge forward and sweep hands toward toes on extended heel." },
-    { name: "Good Morning Hip Hinges", duration: "12 reps", desc: "Hands behind head, hinge at hips with flat back to prime posterior chain." }
-  ],
-  glutes: [
-    { name: "Bodyweight Glute Bridges", duration: "15 reps", desc: "Squeeze glutes at top pause to prime posterior chain." },
-    { name: "Hip Openers / Fire Hydrants", duration: "10 per leg", desc: "Circle knees outward on all fours to activate glute medius." }
-  ]
+export const DEFAULT_MAX_LIFTS = { benchPress: 185, squat: 225, deadlift: 275, overheadPress: 115 };
+
+export const DEFAULT_SETTINGS = {
+  profile: "standard",
+  progressionScheme: "linear",
+  split: "upper_lower",
+  duration: 45,
+  restTime: 60,
+  equipment: ["barbell", "dumbbell", "cable", "leverage machine", "smith machine", "body weight", "kettlebell", "band", "other"],
+  supersets: false,
+  maxLifts: DEFAULT_MAX_LIFTS,
+  selectedInjury: "none",
+  autoStartTimer: true,
+  calisthenicsUnlocked: { push: [1], pull: [1], legs: [1] }
 };
 
-export const COOL_DOWN_STRETCH_LIBRARY = {
-  chest: [{ name: "Doorway Pectoral Stretch", duration: "45 sec hold", desc: "Place forearm against doorframe, step forward to stretch chest." }],
-  shoulders: [{ name: "Cross-Body Shoulder Stretch", duration: "45 sec per side", desc: "Pull arm across chest with opposite arm." }],
-  lats: [{ name: "Child's Pose w/ Lateral Reach", duration: "60 sec hold", desc: "Kneel, sit hips back, and walk hands diagonally to stretch lats." }],
-  quads: [{ name: "Standing / Lying Quad Stretch", duration: "45 sec per side", desc: "Hold foot to glute, keeping knees together and core tight." }],
-  hamstrings: [{ name: "Seated Single-Leg Hamstring Stretch", duration: "45 sec per side", desc: "Extend one leg, fold forward from hips with flat spine." }],
-  glutes: [{ name: "Figure-Four / Pigeon Stretch", duration: "45 sec per side", desc: "Cross ankle over knee, lean forward to stretch deep glutes." }]
-};
+export const DEFAULT_EXERCISES = [
+  { id: "bench_press", name: "Barbell Bench Press", target: "chest", equipment: "barbell", movement_pattern: "horizontal push" },
+  { id: "barbell_row", name: "Barbell Bent-Over Row", target: "upper back", equipment: "barbell", movement_pattern: "horizontal pull" },
+  { id: "overhead_press", name: "Overhead Barbell Press", target: "shoulders", equipment: "barbell", movement_pattern: "vertical push" },
+  { id: "lat_pulldown", name: "Cable Lat Pulldown", target: "lats", equipment: "cable", movement_pattern: "vertical pull" },
+  { id: "barbell_squat", name: "Barbell Back Squat", target: "quads", equipment: "barbell", movement_pattern: "squat" },
+  { id: "romanian_deadlift", name: "Romanian Deadlift", target: "hamstrings", equipment: "barbell", movement_pattern: "hinge" },
+  { id: "db_bicep_curl", name: "Dumbbell Bicep Curl", target: "biceps", equipment: "dumbbell", movement_pattern: "pull" },
+  { id: "tricep_rope_pushdown", name: "Cable Tricep Pushdown", target: "triceps", equipment: "cable", movement_pattern: "push" },
+  { id: "push_up", name: "Push-Up", target: "chest", equipment: "body weight", movement_pattern: "horizontal push" },
+  { id: "pull_up", name: "Pull-Up", target: "lats", equipment: "body weight", movement_pattern: "vertical pull" }
+];
 
-export function isExerciseContraindicated(ex, injuryId) {
-  const activeInj = injuryDataset[injuryId || "none"];
-  if (!activeInj || !activeInj.contraindications || activeInj.contraindications.length === 0) {
-    return false;
-  }
-  const name = (ex.name || '').toLowerCase();
-  const pattern = (ex.movement_pattern || '').toLowerCase();
-  const target = (ex.target || '').toLowerCase();
-
-  return activeInj.contraindications.some(c => 
-    name.includes(c.toLowerCase()) || pattern.includes(c.toLowerCase()) || target.includes(c.toLowerCase())
-  );
+export function roundTo5(val) {
+  return Math.max(10, Math.round(val / 5) * 5);
 }
 
-export function getExerciseMaxLift(exercise, maxLifts = DEFAULT_MAX_LIFTS) {
-  const name = (exercise.name || '').toLowerCase();
-  const target = (exercise.target || '').toLowerCase();
+export function getExerciseMaxLift(ex, userSettings) {
+  const maxes = userSettings?.maxLifts || DEFAULT_MAX_LIFTS;
+  const name = (ex.name || "").toLowerCase();
+  const target = (ex.target || "").toLowerCase();
 
-  if (name.includes('bench') || name.includes('chest press') || target.includes('chest')) {
-    return parseFloat(maxLifts.benchPress) || 185;
-  }
-  if (name.includes('squat') || name.includes('leg press') || target.includes('quad')) {
-    return parseFloat(maxLifts.squat) || 225;
-  }
-  if (name.includes('deadlift') || name.includes('rdl') || name.includes('hip thrust') || target.includes('hamstring')) {
-    return parseFloat(maxLifts.deadlift) || 275;
-  }
-  if (name.includes('press') || name.includes('shoulder') || target.includes('shoulder')) {
-    return parseFloat(maxLifts.overheadPress) || 115;
-  }
+  if (name.includes("bench") || target.includes("chest")) return parseFloat(maxes.benchPress) || 185;
+  if (name.includes("squat") || target.includes("quad")) return parseFloat(maxes.squat) || 225;
+  if (name.includes("deadlift") || target.includes("hamstring")) return parseFloat(maxes.deadlift) || 275;
+  if (name.includes("press") || target.includes("shoulder")) return parseFloat(maxes.overheadPress) || 115;
   return 135;
 }
 
-export function roundTo5(weight) {
-  return Math.max(10, Math.round(weight / 5) * 5);
-}
-
-export function calculateProgressionSetTargets(exercise, scheme = "linear", weekNum = 1, setIdx = 0, style = "standard", maxLifts = DEFAULT_MAX_LIFTS) {
-  if (style === "calisthenics") {
-    return { reps: 10, weight: 0, label: "Natural Bodyweight Flow", isBodyweight: true };
+export function calculateProgressionSetTargets(exercise, scheme, weekNum, setIdx, userSettings) {
+  if (userSettings?.profile === "calisthenics") {
+    return { reps: 10, weight: 0, label: "Bodyweight Flow", isBodyweight: true };
   }
 
-  const maxLift = getExerciseMaxLift(exercise, maxLifts);
+  const maxLift = getExerciseMaxLift(exercise, userSettings);
   let pct = 0.70;
   let reps = 10;
-  let label = "";
+  let label = "Linear";
 
-  switch (scheme) {
-    case "five_three_one": {
-      const weekInCycle = ((weekNum - 1) % 4) + 1;
-      if (weekInCycle === 1) {
-        pct = [0.65, 0.75, 0.85][Math.min(setIdx, 2)];
-        reps = 5;
-        label = `5/3/1 W1 (${Math.round(pct * 100)}%)`;
-      } else if (weekInCycle === 2) {
-        pct = [0.70, 0.80, 0.90][Math.min(setIdx, 2)];
-        reps = 3;
-        label = `5/3/1 W2 (${Math.round(pct * 100)}%)`;
-      } else if (weekInCycle === 3) {
-        pct = [0.75, 0.85, 0.95][Math.min(setIdx, 2)];
-        reps = [5, 3, 1][Math.min(setIdx, 2)];
-        label = `5/3/1 W3 (${Math.round(pct * 100)}%)`;
-      } else {
-        pct = 0.50; reps = 5; label = `5/3/1 Deload (50%)`;
-      }
-      break;
+  if (scheme === "five_three_one") {
+    const weekCycle = ((weekNum - 1) % 4) + 1;
+    if (weekCycle === 1) {
+      pct = [0.65, 0.75, 0.85][Math.min(setIdx, 2)]; reps = 5;
+      label = `5/3/1 W1 Set ${setIdx + 1} (${Math.round(pct * 100)}%)`;
+    } else if (weekCycle === 2) {
+      pct = [0.70, 0.80, 0.90][Math.min(setIdx, 2)]; reps = 3;
+      label = `5/3/1 W2 Set ${setIdx + 1} (${Math.round(pct * 100)}%)`;
+    } else if (weekCycle === 3) {
+      pct = [0.75, 0.85, 0.95][Math.min(setIdx, 2)]; reps = [5, 3, 1][Math.min(setIdx, 2)];
+      label = `5/3/1 W3 Set ${setIdx + 1} (${Math.round(pct * 100)}%)`;
+    } else {
+      pct = 0.50; reps = 5; label = "5/3/1 Deload (50%)";
     }
-    case "juggernaut": {
-      const wave = Math.ceil((weekNum % 16) / 4) || 1;
-      if (weekNum % 4 === 0) { pct = 0.60; reps = 5; label = "Juggernaut Deload (60%)"; }
-      else if (wave === 1) { pct = 0.70; reps = 10; label = "Juggernaut 10s (70%)"; }
-      else if (wave === 2) { pct = 0.75; reps = 8; label = "Juggernaut 8s (75%)"; }
-      else if (wave === 3) { pct = 0.80; reps = 5; label = "Juggernaut 5s (80%)"; }
-      else { pct = 0.85; reps = 3; label = "Juggernaut 3s (85%)"; }
-      break;
-    }
-    case "conjugate": {
-      const isMaxEffort = weekNum % 2 !== 0;
-      if (isMaxEffort) { pct = 0.90; reps = 3; label = "Conjugate Max Effort (90%)"; }
-      else { pct = 0.55; reps = 2; label = "Conjugate Dynamic Speed (55%)"; }
-      break;
-    }
-    default: {
-      if (style === "powerlifter") {
-        pct = 0.80; reps = 5; label = "Powerlifter Linear (80%)";
-      } else {
-        pct = 0.70; reps = 10; label = "Standard Linear (70%)";
-      }
-      break;
-    }
+  } else if (scheme === "juggernaut") {
+    const wave = Math.ceil((weekNum % 16) / 4) || 1;
+    if (weekNum % 4 === 0) { pct = 0.50; reps = 5; label = "Juggernaut Deload (50%)"; }
+    else if (wave === 1) { pct = 0.70; reps = 10; label = "Juggernaut 10s (70%)"; }
+    else if (wave === 2) { pct = 0.75; reps = 8; label = "Juggernaut 8s (75%)"; }
+    else if (wave === 3) { pct = 0.80; reps = 5; label = "Juggernaut 5s (80%)"; }
+    else { pct = 0.85; reps = 3; label = "Juggernaut 3s (85%)"; }
+  } else if (scheme === "conjugate") {
+    const isMax = weekNum % 2 !== 0;
+    pct = isMax ? 0.90 : 0.55;
+    reps = isMax ? 3 : 2;
+    label = isMax ? "Conjugate Max Effort (90%)" : "Conjugate Speed (55%)";
+  } else {
+    pct = userSettings?.profile === "powerlifter" ? 0.80 : 0.70;
+    reps = userSettings?.profile === "powerlifter" ? 5 : 10;
+    label = `${(userSettings?.profile || "STANDARD").toUpperCase()} Linear (${Math.round(pct * 100)}%)`;
   }
 
   const calculatedWeight = roundTo5(maxLift * pct);
   return { reps, weight: calculatedWeight, label, pct: Math.round(pct * 100), isBodyweight: false };
 }
 
-export function auditWorkoutBalance(workoutExercises) {
-  const counts = { horizontalPush: 0, horizontalPull: 0, verticalPush: 0, verticalPull: 0, kneeDominant: 0, hipDominant: 0 };
-  workoutExercises.forEach(ex => {
-    const pattern = (ex.movement_pattern || '').toLowerCase();
+export function generateWorkoutSession(userSettings, customExercises = [], splitOverride = null) {
+  const profile = userSettings.profile || "standard";
+  const split = splitOverride || userSettings.split;
+  const duration = parseInt(userSettings.duration, 10);
+  const count = Math.max(3, Math.floor(duration / 7.5));
 
-    if (MOVEMENT_PATTERNS.HORIZONTAL_PUSH.includes(pattern)) counts.horizontalPush++;
-    else if (MOVEMENT_PATTERNS.HORIZONTAL_PULL.includes(pattern)) counts.horizontalPull++;
-    else if (MOVEMENT_PATTERNS.VERTICAL_PUSH.includes(pattern)) counts.verticalPush++;
-    else if (MOVEMENT_PATTERNS.VERTICAL_PULL.includes(pattern)) counts.verticalPull++;
-    else if (MOVEMENT_PATTERNS.KNEE_DOMINANT.includes(pattern)) counts.kneeDominant++;
-    else if (MOVEMENT_PATTERNS.HIP_DOMINANT.includes(pattern)) counts.hipDominant++;
-  });
-  return counts;
-}
+  let dataset = [...DEFAULT_EXERCISES, ...customExercises];
 
-export function generateTargetedMobility(workoutExercises, injuryId = "none") {
-  const targetMuscles = new Set();
-  workoutExercises.forEach(ex => {
-    const target = (ex.target || ex.muscle_group || '').toLowerCase();
-    if (target.includes('chest')) targetMuscles.add('chest');
-    if (target.includes('shoulder')) targetMuscles.add('shoulders');
-    if (target.includes('lat') || target.includes('back')) targetMuscles.add('lats');
-    if (target.includes('quad')) targetMuscles.add('quads');
-    if (target.includes('hamstring')) targetMuscles.add('hamstrings');
-    if (target.includes('glute')) targetMuscles.add('glutes');
-  });
-
-  if (targetMuscles.size === 0) targetMuscles.add('shoulders');
-
-  const warmups = [];
-  const cooldowns = [];
-
-  const activeInj = injuryDataset[injuryId];
-  if (activeInj && activeInj.prehab_drills && activeInj.prehab_drills.length > 0) {
-    warmups.push(...activeInj.prehab_drills);
-  }
-
-  targetMuscles.forEach(m => {
-    if (DYNAMIC_WARMUP_LIBRARY[m]) warmups.push(...DYNAMIC_WARMUP_LIBRARY[m]);
-    if (COOL_DOWN_STRETCH_LIBRARY[m]) cooldowns.push(...COOL_DOWN_STRETCH_LIBRARY[m]);
-  });
-
-  return { warmups, cooldowns };
-}
-
-export function generateWorkoutSession(options = {}) {
-  const {
-    style = "standard",
-    split = "upper_lower",
-    duration = 45,
-    equipment = ["barbell", "dumbbell", "cable", "body weight"],
-    injuryId = "none",
-    supersets = false,
-    calisthenicsSkills = ["Push-Up", "Australian Inverted Row", "Air Squat"],
-    customExercises = [],
-    isDeloadWeek = false
-  } = options;
-
-  let exerciseCount = Math.max(3, Math.floor(duration / 7.5));
-  if (isDeloadWeek) {
-    exerciseCount = Math.max(2, Math.floor(exerciseCount * 0.8));
-  }
-
-  const mergedDataset = [
-    ...exercisesData.filter(ex => !ex.isCustom),
-    ...customExercises.map(ex => ({ ...ex, isCustom: true }))
-  ];
-
-  let activeEquipment = equipment.map(e => e.toLowerCase().trim());
-  if (style === "calisthenics") {
-    activeEquipment = ["body weight", "bodyweight"];
-  }
-
-  let availableExercises = mergedDataset.filter(ex => 
-    activeEquipment.includes((ex.equipment || '').toLowerCase().trim()) &&
-    !isExerciseContraindicated(ex, injuryId)
-  );
-
-  if (style === "powerlifter") {
-    availableExercises = availableExercises.filter(ex => {
-      const name = (ex.name || '').toLowerCase();
-      return POWERLIFTER_COMPOUNDS.some(c => name.includes(c)) || 
-             ['squat', 'bench', 'press', 'deadlift', 'row'].some(k => name.includes(k));
+  // Apply Injury Contraindications Filter
+  const injuryInfo = INJURY_DATA[userSettings.selectedInjury || "none"];
+  if (injuryInfo && injuryInfo.contraindications.length > 0) {
+    dataset = dataset.filter((ex) => {
+      const name = (ex.name || "").toLowerCase();
+      const pattern = (ex.movement_pattern || "").toLowerCase();
+      return !injuryInfo.contraindications.some((c) => name.includes(c) || pattern.includes(c));
     });
   }
 
-  if (style === "calisthenics") {
-    const allowedCalisthenicsNames = new Set(calisthenicsSkills);
-    Object.values(CALISTHENICS_SKILL_TREES).forEach(tree => {
-      tree.forEach((step, idx) => {
-        if (calisthenicsSkills.includes(step.name) && idx + 1 < tree.length) {
-          allowedCalisthenicsNames.add(tree[idx + 1].name);
-        }
-      });
-    });
-
-    availableExercises = availableExercises.filter(ex => 
-      allowedCalisthenicsNames.has(ex.name) || (ex.equipment || '').toLowerCase().includes('body')
-    );
-  }
-
-  let poolCopy = [...availableExercises];
-  if (poolCopy.length === 0) poolCopy = [...mergedDataset];
-
-  const selected = [];
-
-  if (supersets) {
-    let pairCount = 1;
-    while (selected.length < exerciseCount && poolCopy.length > 0) {
-      const ex1Idx = Math.floor(Math.random() * poolCopy.length);
-      const ex1 = poolCopy.splice(ex1Idx, 1)[0];
-      const target1 = (ex1.target || '').toLowerCase();
-      
-      ex1.supersetGroup = `SUPERSET ${pairCount} - A`;
-      selected.push(ex1);
-
-      if (selected.length >= exerciseCount) break;
-
-      const antagonists = ANTAGONIST_MAP[target1] || [];
-      let ex2Idx = poolCopy.findIndex(ex => antagonists.includes((ex.target || '').toLowerCase()));
-
-      if (ex2Idx !== -1) {
-        const ex2 = poolCopy.splice(ex2Idx, 1)[0];
-        ex2.supersetGroup = `SUPERSET ${pairCount} - B`;
-        selected.push(ex2);
-      } else if (poolCopy.length > 0) {
-        const ex2 = poolCopy.splice(0, 1)[0];
-        ex2.supersetGroup = `SUPERSET ${pairCount} - B`;
-        selected.push(ex2);
-      }
-      pairCount++;
-    }
+  let available = [];
+  if (profile === "calisthenics") {
+    available = dataset.filter((ex) => (ex.equipment || "").toLowerCase() === "body weight");
   } else {
-    while (selected.length < exerciseCount && poolCopy.length > 0) {
-      const idx = Math.floor(Math.random() * poolCopy.length);
-      selected.push(poolCopy.splice(idx, 1)[0]);
+    const activeEquip = (userSettings.equipment || []).map((e) => e.toLowerCase().trim());
+    available = dataset.filter((ex) => activeEquip.includes((ex.equipment || "").toLowerCase().trim()));
+    if (profile === "powerlifter") {
+      available = available.filter((ex) => POWERLIFTER_COMPOUNDS.some((c) => ex.name.toLowerCase().includes(c)));
     }
   }
 
-  return {
-    title: `${style.toUpperCase()} - ${split.toUpperCase().replace('_', ' ')} SESSION`,
-    exercises: selected,
-    isDeloadWeek
-  };
+  let targetMuscles = [];
+  let title = `${profile.toUpperCase()} SESSION`;
+
+  if (split === "upper") { targetMuscles = UPPER_BODY_TARGETS; title = "UPPER BODY SESSION"; }
+  else if (split === "lower") { targetMuscles = LOWER_BODY_TARGETS; title = "LOWER BODY SESSION"; }
+  else if (split === "ppl_push") { targetMuscles = ["chest", "shoulders", "triceps"]; title = "PUSH ONLY SESSION"; }
+  else if (split === "ppl_pull") { targetMuscles = ["lats", "upper back", "biceps"]; title = "PULL ONLY SESSION"; }
+  else if (split === "ppl_legs") { targetMuscles = ["quads", "hamstrings", "glutes", "calves"]; title = "LEGS ONLY SESSION"; }
+  else if (split === "ppl") { title = "PPL COMBINED SESSION"; }
+
+  let pool = available;
+  if (targetMuscles.length > 0) {
+    pool = available.filter((ex) => targetMuscles.includes((ex.target || "").toLowerCase().trim()));
+  }
+  if (pool.length < count) pool = available.length > 0 ? available : dataset;
+
+  let selected = [];
+  let poolCopy = [...pool];
+  while (selected.length < count && poolCopy.length > 0) {
+    selected.push(poolCopy.splice(Math.floor(Math.random() * poolCopy.length), 1)[0]);
+  }
+
+  const warmups = injuryInfo?.prehab_drills ? [...injuryInfo.prehab_drills] : [];
+  selected.forEach((ex) => {
+    const t = (ex.target || "").toLowerCase();
+    if (t.includes("chest") && DYNAMIC_WARMUP_LIBRARY.chest) warmups.push(...DYNAMIC_WARMUP_LIBRARY.chest);
+    if (t.includes("quad") && DYNAMIC_WARMUP_LIBRARY.quads) warmups.push(...DYNAMIC_WARMUP_LIBRARY.quads);
+  });
+
+  const cooldowns = [];
+  selected.forEach((ex) => {
+    const t = (ex.target || "").toLowerCase();
+    if (t.includes("chest") && COOL_DOWN_STRETCH_LIBRARY.chest) cooldowns.push(...COOL_DOWN_STRETCH_LIBRARY.chest);
+  });
+
+  return { title, exercises: selected, warmups, cooldowns };
 }
