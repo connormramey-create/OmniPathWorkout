@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "rolldown tests/engine.test.mjs --file .test-out/engine.mjs --format esm --log-level silent && node .test-out/engine.mjs && rolldown tests/extra.test.mjs --file .test-out/extra.mjs --format esm --log-level silent && node .test-out/extra.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
