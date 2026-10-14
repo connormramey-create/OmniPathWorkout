@@ -1,0 +1,41 @@
+{
+  "_readme": [
+    "Warm-ups and cool-downs, keyed by the muscle groups in muscleGroups.json.",
+    "general: always shown first in every session.",
+    "dynamic: added for each muscle group the session trains (warm-up, top of the workout).",
+    "cooldown: added for each muscle group the session trains (stretches, end of the workout).",
+    "Edit freely: each entry needs name, duration and desc. Duplicate names are shown once."
+  ],
+  "general": [
+    { "name": "Light Cardio", "duration": "5 min", "desc": "Bike, rower, jump rope or brisk walk. Get warm and slightly out of breath." }
+  ],
+  "dynamic": {
+    "chest":      [{ "name": "Arm Swings & Chest Openers", "duration": "45 sec", "desc": "Cross arms across chest, then pull back dynamically." }],
+    "back":       [{ "name": "Band Pull-Aparts", "duration": "15 reps", "desc": "Light band, straight arms, squeeze shoulder blades together." },
+                   { "name": "Lat Overhead Side Reaches", "duration": "10 per side", "desc": "Side bend with an overhead reach." }],
+    "shoulders":  [{ "name": "Arm Circles (Forward & Reverse)", "duration": "30 sec each", "desc": "Small to large circles to warm the shoulder joint." }],
+    "rear_delts": [{ "name": "Band Face Pulls (Light)", "duration": "15 reps", "desc": "Pull to the face and rotate hands back." }],
+    "biceps":     [{ "name": "Light Band Curls", "duration": "15 reps", "desc": "Easy tempo, full range of motion." }],
+    "triceps":    [{ "name": "Light Band Pushdowns", "duration": "15 reps", "desc": "Easy tempo, lock out each rep." }],
+    "forearms":   [{ "name": "Wrist Circles", "duration": "30 sec each way", "desc": "Interlace fingers and roll the wrists." }],
+    "quads":      [{ "name": "Goblet Squat Hold w/ Pry", "duration": "45 sec", "desc": "Sink deep into a squat and gently pry knees out." }],
+    "hamstrings": [{ "name": "Frankenstein Dynamic Sweeps", "duration": "10 per leg", "desc": "Hinge forward and sweep toes." }],
+    "glutes":     [{ "name": "Glute Bridges", "duration": "15 reps", "desc": "Squeeze glutes with a pause at the top." }],
+    "calves":     [{ "name": "Ankle Rocks", "duration": "10 per side", "desc": "Drive the knee over the toes to open the ankle." }],
+    "core":       [{ "name": "Dead Bug (Slow)", "duration": "8 per side", "desc": "Keep the lower back pressed into the floor." }]
+  },
+  "cooldown": {
+    "chest":      [{ "name": "Doorway Pectoral Stretch", "duration": "45 sec hold", "desc": "Lean forward in a doorway to stretch the chest." }],
+    "back":       [{ "name": "Child's Pose w/ Lateral Reach", "duration": "60 sec hold", "desc": "Walk hands diagonally to stretch the lats." }],
+    "shoulders":  [{ "name": "Cross-Body Shoulder Stretch", "duration": "45 sec per side", "desc": "Pull the arm across the chest." }],
+    "rear_delts": [{ "name": "Thread the Needle", "duration": "30 sec per side", "desc": "On hands and knees, reach one arm under the body." }],
+    "biceps":     [{ "name": "Wall Biceps Stretch", "duration": "30 sec per side", "desc": "Palm on the wall behind you, turn away gently." }],
+    "triceps":    [{ "name": "Overhead Triceps Stretch", "duration": "30 sec per side", "desc": "Reach behind the head and press the elbow down." }],
+    "forearms":   [{ "name": "Wrist Flexor Stretch", "duration": "30 sec per side", "desc": "Arm straight, gently pull the fingers back." }],
+    "quads":      [{ "name": "Standing Quad Stretch", "duration": "45 sec per side", "desc": "Hold the foot to the glute." }],
+    "hamstrings": [{ "name": "Seated Hamstring Stretch", "duration": "45 sec per side", "desc": "Fold forward from the hips." }],
+    "glutes":     [{ "name": "Pigeon Stretch", "duration": "45 sec per side", "desc": "Cross ankle over knee and lean forward." }],
+    "calves":     [{ "name": "Wall Calf Stretch", "duration": "30 sec per side", "desc": "Back leg straight, heel down, lean into the wall." }],
+    "core":       [{ "name": "Cobra Stretch", "duration": "30 sec", "desc": "Press up gently and breathe into the stomach." }]
+  }
+}

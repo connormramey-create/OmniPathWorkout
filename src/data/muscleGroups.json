@@ -1,0 +1,74 @@
+{
+  "_readme": [
+    "HOW THE GENERATOR BALANCES A WORKOUT",
+    "groups: every exercise's 'target' (from exercises.json) is mapped to ONE muscle group here.",
+    "        If you add an exercise with a new target word, add that word to a group's 'targets' list",
+    "        or the generator will ignore it.",
+    "splits: 'required' groups each get at least one exercise (in this order).",
+    "        'fill' is the order used to add extra exercises when the session has more slots.",
+    "        A group can appear more than once in 'fill' to give it extra volume.",
+    "        'mainLifts' are the barbell lifts (keys from Settings > 1RM) used to anchor the session.",
+    "        'rotation' splits (upper_lower, ppl) pick the next split in the list after your last logged workout.",
+    "        'region' is used by Conjugate to alternate Max Effort / Dynamic Effort per upper/lower day."
+  ],
+  "groups": {
+    "chest":      { "label": "Chest",       "targets": ["pectorals", "chest", "upper chest", "lower chest", "serratus anterior"] },
+    "back":       { "label": "Back",        "targets": ["lats", "upper back", "traps"] },
+    "shoulders":  { "label": "Shoulders",   "targets": ["shoulders", "front delts", "side delts", "rotator cuff"] },
+    "rear_delts": { "label": "Rear Delts",  "targets": ["rear delts"] },
+    "biceps":     { "label": "Biceps",      "targets": ["biceps", "brachialis"] },
+    "triceps":    { "label": "Triceps",     "targets": ["triceps"] },
+    "forearms":   { "label": "Forearms",    "targets": ["forearms"] },
+    "quads":      { "label": "Quads",       "targets": ["quads"] },
+    "hamstrings": { "label": "Hamstrings",  "targets": ["hamstrings"] },
+    "glutes":     { "label": "Glutes",      "targets": ["glutes", "glute medius", "adductors"] },
+    "calves":     { "label": "Calves",      "targets": ["calves", "soleus", "gastrocnemius", "shin", "tibialis anterior", "ankle stabilizers"] },
+    "core":       { "label": "Core",        "targets": ["abs", "obliques", "core", "lower back"] }
+  },
+  "splits": {
+    "upper": {
+      "title": "UPPER BODY SESSION",
+      "region": "upper",
+      "required": ["chest", "back", "shoulders", "biceps", "triceps"],
+      "fill": ["back", "chest", "rear_delts", "shoulders", "biceps", "triceps", "forearms"],
+      "mainLifts": ["benchPress", "overheadPress"]
+    },
+    "lower": {
+      "title": "LOWER BODY SESSION",
+      "region": "lower",
+      "required": ["quads", "hamstrings", "glutes", "calves", "core"],
+      "fill": ["quads", "hamstrings", "glutes", "core", "calves"],
+      "mainLifts": ["squat", "deadlift"]
+    },
+    "ppl_push": {
+      "title": "PUSH SESSION",
+      "region": "upper",
+      "required": ["chest", "shoulders", "triceps"],
+      "fill": ["chest", "shoulders", "triceps"],
+      "mainLifts": ["benchPress", "overheadPress"]
+    },
+    "ppl_pull": {
+      "title": "PULL SESSION",
+      "region": "upper",
+      "required": ["back", "biceps", "rear_delts"],
+      "fill": ["back", "biceps", "rear_delts", "forearms"],
+      "mainLifts": ["deadlift"]
+    },
+    "ppl_legs": {
+      "title": "LEGS SESSION",
+      "region": "lower",
+      "required": ["quads", "hamstrings", "glutes", "calves"],
+      "fill": ["quads", "hamstrings", "glutes", "core", "calves"],
+      "mainLifts": ["squat"]
+    },
+    "full_body": {
+      "title": "FULL BODY SESSION",
+      "region": "full",
+      "required": ["quads", "chest", "back", "hamstrings", "shoulders"],
+      "fill": ["glutes", "core", "biceps", "triceps", "calves", "back", "chest"],
+      "mainLifts": ["squat", "benchPress", "deadlift"]
+    },
+    "upper_lower": { "rotation": ["upper", "lower"] },
+    "ppl":         { "rotation": ["ppl_push", "ppl_pull", "ppl_legs"] }
+  }
+}

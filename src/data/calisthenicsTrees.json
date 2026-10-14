@@ -1,0 +1,64 @@
+{
+  "_readme": [
+    "Calisthenics skill trees. Each step's 'exercise' MUST exactly match a name in exercises.json.",
+    "The generator allows: every skill you've checked as mastered + the step right after it.",
+    "With nothing checked in a tree, only level 1 is allowed.",
+    "Skills in a tree that are NOT unlocked never appear in a workout.",
+    "Other bodyweight exercises (not in any tree) are allowed only up to the difficulty of the hardest",
+    "unlocked skill in the related tree. 'patterns' decides which tree an exercise is related to.",
+    "legacyNames: old skill names that were saved before the names were matched to exercises.json."
+  ],
+  "trees": {
+    "push": {
+      "label": "Push",
+      "patterns": ["horizontal push", "vertical push", "elbow extension", "shoulder abduction", "horizontal push / flexion", "hinge / vertical push"],
+      "steps": [
+        { "level": 1, "exercise": "Push-Up", "reps": "8-12 reps" },
+        { "level": 2, "exercise": "Diamond Push-Up", "reps": "8-12 reps" },
+        { "level": 3, "exercise": "Pike Push-Up", "reps": "6-10 reps" },
+        { "level": 4, "exercise": "Elevated Pike Push-Up", "reps": "5-8 reps" },
+        { "level": 5, "exercise": "Handstand Push-Up", "reps": "3-5 reps" }
+      ]
+    },
+    "pull": {
+      "label": "Pull",
+      "patterns": ["vertical pull", "horizontal pull", "elbow flexion", "hinge / vertical pull"],
+      "steps": [
+        { "level": 1, "exercise": "Inverted Row", "reps": "8-12 reps" },
+        { "level": 2, "exercise": "Underhand Chin-Up", "reps": "6-10 reps" },
+        { "level": 3, "exercise": "Overhand Pull-Up", "reps": "5-8 reps" },
+        { "level": 4, "exercise": "Archer Pull-Up", "reps": "4-6 reps" },
+        { "level": 5, "exercise": "Muscle-Up", "reps": "2-4 reps" }
+      ]
+    },
+    "legs": {
+      "label": "Legs",
+      "patterns": ["squat", "hinge", "knee flexion", "knee extension", "hip extension", "hip abduction", "hip adduction", "ankle extension", "ankle flexion", "squat / rotation", "hinge / squat"],
+      "steps": [
+        { "level": 1, "exercise": "Air Squat", "reps": "15-20 reps" },
+        { "level": 2, "exercise": "Bodyweight Bulgarian Split Squat", "reps": "8-12 reps" },
+        { "level": 3, "exercise": "Shrimp Squat", "reps": "5-8 reps" },
+        { "level": 4, "exercise": "Pistol Squat", "reps": "3-6 reps" }
+      ]
+    },
+    "core": {
+      "label": "Core",
+      "patterns": ["anti-extension", "flexion", "rotation", "anti-rotation", "anti-lateral flexion", "lateral flexion", "rotation / flexion", "hinge / rotation"],
+      "steps": [
+        { "level": 1, "exercise": "Dead Bug", "reps": "8-10 per side" },
+        { "level": 2, "exercise": "Hanging Knee Raise", "reps": "10-15 reps" },
+        { "level": 3, "exercise": "Hollow Body Hold", "reps": "20-30 sec hold" },
+        { "level": 4, "exercise": "Hanging Leg Raise", "reps": "8-12 reps" },
+        { "level": 5, "exercise": "Toes to Bar", "reps": "5-10 reps" },
+        { "level": 6, "exercise": "L-Sit", "reps": "10-20 sec hold" }
+      ]
+    }
+  },
+  "legacyNames": {
+    "Australian Inverted Row": "Inverted Row",
+    "Chin-Up": "Underhand Chin-Up",
+    "Pull-Up": "Overhand Pull-Up",
+    "Handstand Push-Up (Wall)": "Handstand Push-Up",
+    "Bulgarian Split Squat": "Bodyweight Bulgarian Split Squat"
+  }
+}
