@@ -310,15 +310,17 @@ export default function App() {
 
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-100 p-4 pb-24 font-sans theme-${profile}`}>
-      <header className="flex justify-between items-center border-b border-slate-800 pb-3 mb-6 max-w-4xl mx-auto gap-2">
-        <div>
-          <h1 className="text-2xl font-black tracking-wider text-amber-400">OmniPathWorkout</h1>
+      {/* On phones the buttons stack under each other (flex-col); from tablet width up they sit side by side. */}
+      <header className="flex justify-between items-start sm:items-center border-b border-slate-800 pb-3 mb-6 max-w-4xl mx-auto gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-black tracking-wider text-amber-400">OmniPathWorkout</h1>
           <div className="text-xs tracking-widest text-slate-400 font-semibold uppercase">{profile.replace("_", " ")} WORKOUT STYLE</div>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center shrink-0">
           {currentUser ? (
-            <button onClick={() => auth.signOut()} className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-slate-300">
-              {currentUser.displayName || currentUser.email?.split("@")[0]} (Logout)
+            <button onClick={() => auth.signOut()} className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300 max-w-[10rem] flex flex-col items-center leading-tight">
+              <span className="truncate max-w-full">{currentUser.displayName || currentUser.email?.split("@")[0]}</span>
+              <span className="text-[10px] text-slate-500">Logout</span>
             </button>
           ) : (
             <button onClick={() => setShowAuth(true)} className="text-xs bg-amber-500 hover:bg-amber-600 font-bold px-3 py-1.5 rounded text-slate-950">
