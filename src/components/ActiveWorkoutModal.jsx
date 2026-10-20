@@ -1,5 +1,6 @@
 import { CooldownList, WarmupList } from "./RoutineBlocks";
 import { formatClock } from "../hooks/useRestTimer";
+import ExerciseVideo from "./ExerciseVideo";
 
 export default function ActiveWorkoutModal({ workout, timer, onToggleSet, onUpdateSet, onMinimize, onFinish, onDiscard }) {
   return (
@@ -21,9 +22,10 @@ export default function ActiveWorkoutModal({ workout, timer, onToggleSet, onUpda
           {workout.logs.map((ex, exIdx) => (
             <div key={ex.id || exIdx} className="bg-slate-950 p-4 rounded border border-slate-800 space-y-2">
               <div className="flex justify-between items-start gap-2">
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm text-slate-200">{ex.name}</div>
                   <div className="text-[10px] text-slate-500">{ex.group}</div>
+                  <ExerciseVideo exerciseId={ex.id} />
                 </div>
                 {ex.isMainLift && <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-bold">MAIN LIFT</span>}
               </div>
