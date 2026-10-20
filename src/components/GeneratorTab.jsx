@@ -1,6 +1,7 @@
 import { CooldownList, MissingGroupsNotice, WarmupList } from "./RoutineBlocks";
 import { MUSCLE_GROUP_LABELS, getMuscleGroup } from "../services/workoutEngine";
 import { PROGRESSION_SCHEMES, getMainLift } from "../services/progression";
+import ExerciseVideo from "./ExerciseVideo";
 
 export default function GeneratorTab({ settings, cycleWeek, session, onGenerate, onStart, onRestartCycle }) {
   const usesCycle = settings.profile !== "calisthenics" && settings.profile !== "program_builder"
@@ -47,11 +48,12 @@ export default function GeneratorTab({ settings, cycleWeek, session, onGenerate,
             <h4 className="text-xs font-bold text-slate-400">💪 TARGETED EXERCISES</h4>
             {session.exercises.map((ex) => (
               <div key={ex.id || ex.name} className="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center gap-2">
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm text-slate-200">{ex.name}</div>
                   <div className="text-xs text-slate-500">
                     {MUSCLE_GROUP_LABELS[getMuscleGroup(ex)] || ex.target} · {ex.target} · {ex.equipment}
                   </div>
+                  <ExerciseVideo exerciseId={ex.id} />
                 </div>
                 <div className="flex gap-1">
                   {getMainLift(ex) && settings.profile !== "calisthenics" && <Badge color="amber">MAIN LIFT</Badge>}
