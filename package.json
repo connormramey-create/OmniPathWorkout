@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:native": "vite build && node -e \"require('fs').rmSync('dist/videos',{recursive:true,force:true})\" && npx cap sync",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "rolldown tests/engine.test.mjs --file .test-out/engine.mjs --format esm --log-level silent && node .test-out/engine.mjs && rolldown tests/extra.test.mjs --file .test-out/extra.mjs --format esm --log-level silent && node .test-out/extra.mjs"
